@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.text.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: White;" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.controllers.ModellingController">
+   <top>
+       <MenuBar BorderPane.alignment="CENTER">
+           <Menu mnemonicParsing="false" text="Файл">
+               <MenuItem onAction="#loadFile" mnemonicParsing="false" text="Загрузить парковку из файла"/>
+           </Menu>
+           <Menu mnemonicParsing="false" text="Ввод и настройка параметров"/>
+           <Menu mnemonicParsing="false" text="Справка">
+               <MenuItem mnemonicParsing="false" text="Информация о разработчиках"/>
+               <MenuItem mnemonicParsing="false" text="Информация о системе"/>
+           </Menu>
+       </MenuBar>
+   </top>
+   <center>
+       <SplitPane dividerPositions="0.6354515050167224" prefHeight="160.0" prefWidth="200.0"
+                  BorderPane.alignment="CENTER">
+           <AnchorPane fx:id="anchorPaneFlow" minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0"
+                       style="-fx-background-color: White;">
+               <GridPane fx:id="gridPane" gridLinesVisible="true" layoutX="42.0" layoutY="31.0" prefHeight="316.0"
+                         prefWidth="303.0" AnchorPane.bottomAnchor="45.0" AnchorPane.leftAnchor="45.0"
+                         AnchorPane.rightAnchor="45.0" AnchorPane.topAnchor="45.0">
+                   <columnConstraints>
+                       <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0"/>
+                       <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0"/>
+                       <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0"/>
+                       <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0"/>
+                       <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0"/>
+                   </columnConstraints>
+                   <rowConstraints>
+                       <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                       <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                       <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                       <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                       <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                   </rowConstraints>
+               </GridPane>
+           </AnchorPane>
+           <SplitPane dividerPositions="0.5898123324396782" orientation="VERTICAL" prefHeight="200.0" prefWidth="160.0">
+               <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0"
+                           style="-fx-background-color: White;">
+                   <ImageView fx:id="slow" fitHeight="42.0" fitWidth="42.0" pickOnBounds="true"
+                              preserveRatio="true">
+                       <Image url="@../images/back.jpg"/>
+                   </ImageView>
+                   <ImageView fx:id="pause" fitHeight="42.0" fitWidth="42.0" layoutX="42.0" layoutY="1.0"
+                              pickOnBounds="true" preserveRatio="true">
+                       <Image url="@../images/pause.jpg"/>
+                   </ImageView>
+                   <ImageView fx:id="play" fitHeight="42.0" fitWidth="42.0" layoutX="87.0" layoutY="1.0"
+                              pickOnBounds="true" preserveRatio="true" onMouseClicked="#playClick">
+                       <Image url="@../images/play.jpg"/>
+                   </ImageView>
+                   <ImageView fx:id="stop" fitHeight="42.0" fitWidth="42.0" layoutX="129.0" layoutY="3.0"
+                              pickOnBounds="true" preserveRatio="true">
+                       <Image url="@../images/stop.jpg"/>
+                   </ImageView>
+                   <ImageView fx:id="fast" fitHeight="42.0" fitWidth="42.0" layoutX="171.0" pickOnBounds="true"
+                              preserveRatio="true">
+                       <Image url="@../images/forward.jpg"/>
+                   </ImageView>
+                   <Label layoutX="13.0" layoutY="128.0" text="Занято мест:">
+                       <font>
+                           <Font size="14.0"/>
+                       </font>
+                   </Label>
+                   <Label layoutX="14.0" layoutY="170.0" text="Общее количество мест:">
+                       <font>
+                           <Font size="14.0"/>
+                       </font>
+                   </Label>
+                   <Label fx:id="clock" layoutX="65.0" layoutY="56.0" text="00:00">
+                       <font>
+                           <Font size="36.0"/>
+                       </font>
+                   </Label>
+                   <Label fx:id="countNoFreePlaces" layoutX="108.0" layoutY="128.0" text="0">
+                       <font>
+                           <Font size="14.0"/>
+                       </font>
+                   </Label>
+                   <Label fx:id="countPlaces" layoutX="186.0" layoutY="170.0" text="0">
+                       <font>
+                           <Font size="14.0"/>
+                       </font>
+                   </Label>
+               </AnchorPane>
+               <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0"
+                           style="-fx-background-color: White;">
+                   <Label layoutX="14.0" layoutY="14.0" text="Доход парковки за день:">
+                       <font>
+                           <Font size="14.0"/>
+                       </font>
+                   </Label>
+                   <Label layoutX="14.0" layoutY="58.0" text="Среднее количество">
+                       <font>
+                           <Font size="14.0"/>
+                       </font>
+                   </Label>
+                   <Label layoutX="14.0" layoutY="78.0" text="занятых мест за день:">
+                       <font>
+                           <Font size="14.0"/>
+                       </font>
+                   </Label>
+                   <Label fx:id="profitDay" layoutX="186.0" layoutY="14.0" text="-">
+                       <font>
+                           <Font size="14.0"/>
+                       </font>
+                   </Label>
+                   <Label fx:id="averagePlacesDay" layoutX="171.0" layoutY="78.0" text="-">
+                       <font>
+                           <Font size="14.0"/>
+                       </font>
+                   </Label>
+               </AnchorPane>
+           </SplitPane>
+       </SplitPane>
+   </center>
+</BorderPane>

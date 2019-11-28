@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.paint.*?>
+<?import javafx.scene.effect.*?>
+<?import javafx.scene.media.*?>
+<?import javafx.scene.web.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.text.*?>
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.controllers.ConstructionController">
+   <top>
+      <MenuBar fx:id="menuBar" BorderPane.alignment="CENTER">
+        <menus>
+          <Menu mnemonicParsing="false" text="Файл">
+            <items>
+              <MenuItem mnemonicParsing="false" onAction="#loadFile" text="Загрузить топологию из файла" />
+                <MenuItem mnemonicParsing="false" onAction="#saveFile" text="Сохранить топологию в файл" />
+            </items>
+          </Menu>
+          <Menu mnemonicParsing="false" text="Справка">
+            <items>
+              <MenuItem mnemonicParsing="false" text="Информация о разрабочиках" />
+                <MenuItem mnemonicParsing="false" text="Информация о системе" />
+            </items>
+          </Menu>
+        </menus>
+      </MenuBar>
+   </top>
+   <center>
+      <SplitPane dividerPositions="0.5852842809364549" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+         <items>
+            <GridPane fx:id="gridPane" gridLinesVisible="true" style="-fx-background-color: white;">
+              <columnConstraints>
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+              </columnConstraints>
+              <rowConstraints>
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+              </rowConstraints>
+            </GridPane>
+            <AnchorPane prefHeight="373.0" prefWidth="253.0" style="-fx-background-color: White;">
+               <children>
+                  <Label layoutX="40.0" layoutY="4.0" text="Размер по горизонтали">
+                     <font>
+                        <Font size="14.0" />
+                     </font>
+                  </Label>
+                  <Label layoutX="48.0" layoutY="69.0" text="Размер по вертикали">
+                     <font>
+                        <Font size="14.0" />
+                     </font>
+                  </Label>
+                  <Label fx:id="patterns" layoutX="85.0" layoutY="137.0" text="Шаблоны">
+                     <font>
+                        <Font size="14.0" />
+                     </font>
+                  </Label>
+                  <ImageView fx:id="car" fitHeight="53.0" fitWidth="55.0" layoutX="13.0" layoutY="167.0" onMouseClicked="#clickCar" pickOnBounds="true" preserveRatio="true">
+                     <image>
+                        <Image url="@../images/car.JPG" />
+                     </image>
+                  </ImageView>
+                  <ImageView fx:id="arrowOut" fitHeight="53.0" fitWidth="55.0" layoutX="131.0" layoutY="167.0" onMouseClicked="#clickArrowUp" pickOnBounds="true" preserveRatio="true">
+                     <image>
+                        <Image url="@../images/arrowout.JPG" />
+                     </image>
+                  </ImageView>
+                  <ImageView fx:id="arrowIn" fitHeight="53.0" fitWidth="55.0" layoutX="80.0" layoutY="167.0" onMouseClicked="#clickArrowDown" pickOnBounds="true" preserveRatio="true">
+                     <image>
+                        <Image url="@../images/arrowin.JPG" />
+                     </image>
+                  </ImageView>
+                  <ImageView fx:id="cash" fitHeight="53.0" fitWidth="55.0" layoutX="184.0" layoutY="167.0" onMouseClicked="#clickCash" pickOnBounds="true" preserveRatio="true">
+                     <image>
+                        <Image url="@../images/cash.JPG" />
+                     </image>
+                  </ImageView>
+                  <ImageView fx:id="road" fitHeight="53.0" fitWidth="55.0" layoutX="13.0" layoutY="220.0" onMouseClicked="#clickRoad" pickOnBounds="true" preserveRatio="true">
+                     <image>
+                        <Image url="@../images/road.JPG" />
+                     </image>
+                  </ImageView>
+                  <ImageView fx:id="truck" fitHeight="53.0" fitWidth="55.0" layoutX="68.0" layoutY="221.0" onMouseClicked="#clickTruck" pickOnBounds="true" preserveRatio="true">
+                     <image>
+                        <Image url="@../images/bigcar.JPG" />
+                     </image>
+                  </ImageView>
+                  <ImageView fx:id="emptyPattern" fitHeight="53.0" fitWidth="55.0" layoutX="123.0" layoutY="217.0" onMouseClicked="#clickEmpty" pickOnBounds="true" preserveRatio="true">
+                     <image>
+                        <Image url="@../images/empty.JPG" />
+                     </image>
+                  </ImageView>
+                   <Spinner fx:id="spinnerHorizontal" initialValue="5" layoutX="42.0" layoutY="34.0" max="15" min="5" onMouseClicked="#changeHorizontalSize" prefHeight="25.0" prefWidth="149.0">
+                       <editable>true</editable>
+                   </Spinner>
+                   <Spinner fx:id="spinnerVertical" initialValue="5" layoutX="42.0" layoutY="98.0" max="15" min="5" onMouseClicked="#changeVerticalSize" prefHeight="25.0" prefWidth="149.0">
+                       <editable>true</editable>
+                   </Spinner>
+                  <Button fx:id="check" layoutX="79.0" layoutY="329.0" mnemonicParsing="false" onMouseClicked="#test" text="Проверить">
+                     <font>
+                        <Font size="14.0" />
+                     </font>
+                  </Button>
+                  <ImageView fx:id="cross" fitHeight="44.0" fitWidth="41.0" layoutX="185.0" layoutY="222.0" onMouseClicked="#clickCross" pickOnBounds="true" preserveRatio="true">
+                     <image>
+                        <Image url="@../images/cross.JPG" />
+                     </image>
+                  </ImageView>
+               </children>
+            </AnchorPane>
+         </items>
+      </SplitPane>
+   </center>
+</BorderPane>
