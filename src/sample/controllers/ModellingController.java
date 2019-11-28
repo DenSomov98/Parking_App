@@ -25,6 +25,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.Map;
 import java.util.Random;
 
 import javafx.scene.control.Label;
@@ -225,7 +228,18 @@ public class ModellingController {
     private void playClick(){
         FlowThread flowThread = new FlowThread(anchorPaneFlow);
         flowThread.setDaemon(true);
+        Calendar calendar = new GregorianCalendar();
+        calendar.set(Calendar.HOUR_OF_DAY, 12);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        TimeThread timeThread = new TimeThread(calendar, clock);
         flowThread.start();
+        timeThread.start();
+    }
+
+    @FXML
+    private void stopModelling(){
+
     }
 }
 
@@ -278,8 +292,16 @@ class UpdaterAnchorPane implements Runnable{
 
     @Override
     public void run() {
-        ImageView imageView = new ImageView(new Image(getClass().getResourceAsStream("../images/carModelling.JPG")));
-        imageView.setFitWidth(35);
+        double probability = 0.5;
+        ImageView imageView = null;
+        if(new Random().nextDouble() <= probability) {
+            imageView = new ImageView(new Image(getClass().getResourceAsStream("../images/carModelling.JPG")));
+            imageView.setFitWidth(45);
+        }
+        else {
+            imageView = new ImageView(new Image(getClass().getResourceAsStream("../images/truckModelling.JPG")));
+            imageView.setFitWidth(55);
+        }
         imageView.setFitHeight(35);
         anchorPane.getChildren().add(number, (Node)imageView);
         anchorPane.getChildren().get(number).setLayoutX(0);
@@ -320,3 +342,59 @@ class FlowThread extends Thread{
         return a + random.nextInt(b-a+1);
     }
 }
+
+class TimeThread extends Thread{
+    private Calendar calendar;
+    private Label clock;
+
+    public TimeThread(Calendar calendar, Label clock){
+        this.calendar = calendar;
+        this.clock = clock;
+    }
+    @Override
+    public void run() {
+        while (!interrupted()) {
+            Platform.runLater(new UpdaterTime(calendar, clock));
+            try {
+                sleep(1000);
+            }
+            catch (InterruptedException ignored){
+
+            }
+            calendar.add(Calendar.SECOND, 1);
+        }
+    }
+}
+
+class UpdaterTime implements Runnable{
+    private Calendar calendar;
+    private Label clock;
+
+    public UpdaterTime(Calendar calendar, Label clock){
+        this.calendar = calendar;
+        this.clock = clock;
+    }
+    @Override
+    public void run() {
+        if (calendar.get(Calendar.MINUTE) < 10 && calendar.get(Calendar.SECOND) < 10) {
+            clock.setText(calendar.get(Calendar.HOUR_OF_DAY) + ":0" + calendar.get(Calendar.MINUTE) + ":0" + calendar.get(Calendar.SECOND));
+        } else if (calendar.get(Calendar.MINUTE) < 10 && calendar.get(Calendar.SECOND) >= 10) {
+            clock.setText(calendar.get(Calendar.HOUR_OF_DAY) + ":0" + calendar.get(Calendar.MINUTE) + ":" + calendar.get(Calendar.SECOND));
+        } else if (calendar.get(Calendar.MINUTE) > 10 && calendar.get(Calendar.SECOND) < 10) {
+            clock.setText(calendar.get(Calendar.HOUR_OF_DAY) + ":" + calendar.get(Calendar.MINUTE) + ":0" + calendar.get(Calendar.SECOND));
+        } else {
+            clock.setText(calendar.get(Calendar.HOUR_OF_DAY) + ":" + calendar.get(Calendar.MINUTE) + ":" + calendar.get(Calendar.SECOND));
+        }
+    }
+}
+
+    /*
+    СДЕЛАТЬ:
+    1. Появление машин на шоссе (СДЕЛАНО)
+    2. Появление типа автомобиля по вероятности (СДЕЛАНО)
+    3. Работа с часами (СДЕЛАНО)
+    4. Остановка потоков
+    5. Пауза потоков
+    6. Заезд на парковку по вероятности
+    7. Построение миаршрута до парковочного места
+    */
