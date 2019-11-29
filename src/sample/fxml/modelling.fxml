@@ -72,7 +72,7 @@
                                    <Image url="@../images/stop.jpg" />
                                </image>
                             </ImageView>
-                            <ImageView fx:id="fast" fitHeight="42.0" fitWidth="42.0" layoutX="171.0" pickOnBounds="true" preserveRatio="true">
+                            <ImageView fx:id="fast" fitHeight="42.0" fitWidth="42.0" layoutX="171.0" onMouseClicked="#fastClick" pickOnBounds="true" preserveRatio="true">
                                <image>
                                    <Image url="@../images/forward.jpg" />
                                </image>

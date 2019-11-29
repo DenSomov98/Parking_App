@@ -60,7 +60,15 @@ public class ModellingController {
     @FXML
     private AnchorPane anchorPaneFlow;
 
+    private Calendar calendar;
+
+    private double booster;
+
+    private TimeThread timeThread;
+
     public void initialize(){
+        calendar = new GregorianCalendar();
+        booster = 1;
         drawGridInit();
     }
 
@@ -226,42 +234,66 @@ public class ModellingController {
 
     @FXML
     private void playClick(){
-        FlowThread flowThread = new FlowThread(anchorPaneFlow);
+        FlowThread flowThread = new FlowThread(anchorPaneFlow, booster);
+        flowThread.setName("TransportFlowThread");
         flowThread.setDaemon(true);
-        Calendar calendar = new GregorianCalendar();
         calendar.set(Calendar.HOUR_OF_DAY, 12);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
-        TimeThread timeThread = new TimeThread(calendar, clock);
+        timeThread = new TimeThread(calendar, clock, booster);
+        timeThread.setName("TimeThread");
+        timeThread.setDaemon(true);
         flowThread.start();
         timeThread.start();
     }
 
     @FXML
     private void stopModelling(){
+        Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
+        for (Thread thread : threads.keySet()) {
+            if(thread.getName().equals("TimeThread") || thread.getName().equals("TransportFlowThread") || thread.getName().contains("CarThread")){
+                thread.interrupt();
+            }
+        }
+    }
 
+    @FXML
+    private void fastClick(){
+        booster += 10;
+        //Calendar calendar = timeThread.getCalendar();
+        timeThread.interrupt();
+        timeThread.setBooster(booster);
+        timeThread.goOn();
     }
 }
 
 class CarThread extends Thread{
     private AnchorPane anchorPane;
     private int number;
+    private boolean canWork;
 
     public CarThread(AnchorPane anchorPane, int number){
         this.anchorPane = anchorPane;
         this.number = number;
+        canWork = true;
     }
     @Override
     public void run() {
-        for(int i = 0; i < anchorPane.getWidth() + 50; i = i + 10){
-            Platform.runLater(new UpdaterCar(i, anchorPane, number));
-            try {
-                sleep(100);
-            }
-            catch (InterruptedException ex){
-                ex.printStackTrace();
+        for (int i = 0; i < anchorPane.getWidth() + 50; i = i + 10) {
+            if(canWork) {
+                Platform.runLater(new UpdaterCar(i, anchorPane, number));
+                try {
+                    sleep(100);
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
             }
         }
+    }
+
+    @Override
+    public void interrupt() {
+        canWork = false;
     }
 }
 
@@ -312,17 +344,22 @@ class UpdaterAnchorPane implements Runnable{
 
 class FlowThread extends Thread{
     private AnchorPane anchorPane;
+    private boolean canWork;
+    private double booster;
 
-    public FlowThread(AnchorPane anchorPane){
+    public FlowThread(AnchorPane anchorPane, double booster){
         this.anchorPane = anchorPane;
+        canWork = true;
+        this.booster = booster;
     }
 
     @Override
     public void run() {
         int number = 1;
-        while (number < 100){
+        while (canWork){
             Platform.runLater(new UpdaterAnchorPane(number, anchorPane));
             CarThread carThread = new CarThread(anchorPane, number);
+            carThread.setName("CarThread" + number);
             carThread.start();
             try {
                 int time = getTimeUniform();
@@ -332,6 +369,16 @@ class FlowThread extends Thread{
                 ex.printStackTrace();
             }
             number++;
+        }
+    }
+
+    @Override
+    public void interrupt() {
+        canWork = false;
+        for (Node node: anchorPane.getChildren()){
+            if(node instanceof ImageView){
+                node.setVisible(false);
+            }
         }
     }
 
@@ -346,23 +393,45 @@ class FlowThread extends Thread{
 class TimeThread extends Thread{
     private Calendar calendar;
     private Label clock;
+    private boolean canWork;
+    private double booster;
 
-    public TimeThread(Calendar calendar, Label clock){
+    public TimeThread(Calendar calendar, Label clock, double booster){
         this.calendar = calendar;
         this.clock = clock;
+        this.booster = booster;
+        canWork = true;
     }
     @Override
     public void run() {
-        while (!interrupted()) {
+        while (canWork) {
             Platform.runLater(new UpdaterTime(calendar, clock));
             try {
-                sleep(1000);
-            }
-            catch (InterruptedException ignored){
+                sleep((long) (1000 / booster));
+            } catch (InterruptedException ignored) {
 
             }
             calendar.add(Calendar.SECOND, 1);
         }
+    }
+    @Override
+    public void interrupt() {
+        canWork = false;
+    }
+
+    public Calendar getCalendar(){
+        return this.calendar;
+    }
+
+    public void setCalendar(Calendar calendar){
+        this.calendar = calendar;
+    }
+
+    public void setBooster(double booster) {
+        this.booster = booster;
+    }
+    public void goOn(){
+        canWork = true;
     }
 }
 
