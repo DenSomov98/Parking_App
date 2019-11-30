@@ -25,12 +25,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.sql.Time;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Map;
 import java.util.Random;
 
 import javafx.scene.control.Label;
+import sample.threads.*;
 
 public class ModellingController {
     @FXML
@@ -61,12 +63,20 @@ public class ModellingController {
     private AnchorPane anchorPaneFlow;
 
     private Calendar calendar;
-
     private double booster;
 
+    private FlowThread flowThread;
     private TimeThread timeThread;
 
+    private boolean isStopped;
+    private boolean isPaused;
+
+
     public void initialize(){
+        pause.setDisable(true);
+        stop.setDisable(true);
+        slow.setDisable(true);
+        fast.setDisable(true);
         calendar = new GregorianCalendar();
         booster = 1;
         drawGridInit();
@@ -234,25 +244,71 @@ public class ModellingController {
 
     @FXML
     private void playClick(){
-        FlowThread flowThread = new FlowThread(anchorPaneFlow, booster);
-        flowThread.setName("TransportFlowThread");
-        flowThread.setDaemon(true);
-        calendar.set(Calendar.HOUR_OF_DAY, 12);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        timeThread = new TimeThread(calendar, clock, booster);
-        timeThread.setName("TimeThread");
-        timeThread.setDaemon(true);
-        flowThread.start();
-        timeThread.start();
+        if(isPaused){
+            isPaused = false;
+            timeThread.resumeThread();
+            flowThread.resumeThread();
+            Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
+            for (Thread thread : threads.keySet()) {
+                if(thread.getName().contains("CarThread")){
+                    CarThread carThread = (CarThread)thread;
+                    carThread.resumeThread();
+                }
+            }
+            //flowThread.goOn();
+            //timeThread.start();
+           // flowThread.start();
+        }
+        else {
+            if(isStopped){
+                isStopped = false;
+                timeThread.setCanWork(true);
+            }
+            pause.setDisable(false);
+            stop.setDisable(false);
+            slow.setDisable(false);
+            fast.setDisable(false);
+            flowThread = new FlowThread(anchorPaneFlow, booster);
+            flowThread.setName("TransportFlowThread");
+            flowThread.setDaemon(true);
+            calendar.set(Calendar.HOUR_OF_DAY, 12);
+            calendar.set(Calendar.MINUTE, 0);
+            calendar.set(Calendar.SECOND, 0);
+            timeThread = new TimeThread(calendar, clock, booster);
+            timeThread.setName("TimeThread");
+            timeThread.setDaemon(true);
+            flowThread.start();
+            timeThread.start();
+        }
     }
 
     @FXML
-    private void stopModelling(){
+    private void stopClick(){
+        isStopped = true;
         Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
         for (Thread thread : threads.keySet()) {
-            if(thread.getName().equals("TimeThread") || thread.getName().equals("TransportFlowThread") || thread.getName().contains("CarThread")){
+            if(thread.getName().equals("TimeThread") || thread.getName().equals("TransportFlowThread") || thread.getName().contains("CarThread")) {// || thread.getName().equals("TransportFlowThread") || thread.getName().contains("CarThread")){
                 thread.interrupt();
+            }
+        }
+    }
+
+    @FXML
+    private void pauseClick(){
+        isPaused = true;
+        Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
+        for (Thread thread : threads.keySet()) {
+            if(thread.getName().equals("TimeThread")){
+                TimeThread timeThread = (TimeThread)thread;
+                timeThread.pauseThread();
+            }
+            else if(thread.getName().equals("TransportFlowThread")){
+                FlowThread flowThread = (FlowThread)thread;
+                flowThread.pauseThread();
+            }
+            else if(thread.getName().contains("CarThread")){
+                CarThread carThread = (CarThread)thread;
+                carThread.pauseThread();
             }
         }
     }
@@ -260,210 +316,27 @@ public class ModellingController {
     @FXML
     private void fastClick(){
         booster += 10;
-        //Calendar calendar = timeThread.getCalendar();
-        timeThread.interrupt();
+        timeThread.pauseThread();
         timeThread.setBooster(booster);
-        timeThread.goOn();
+        timeThread.resumeThread();
+    }
+
+    @FXML
+    private void slowClick(){
+        booster -= 10;
+        timeThread.pauseThread();
+        timeThread.setBooster(booster);
+        timeThread.resumeThread();
     }
 }
-
-class CarThread extends Thread{
-    private AnchorPane anchorPane;
-    private int number;
-    private boolean canWork;
-
-    public CarThread(AnchorPane anchorPane, int number){
-        this.anchorPane = anchorPane;
-        this.number = number;
-        canWork = true;
-    }
-    @Override
-    public void run() {
-        for (int i = 0; i < anchorPane.getWidth() + 50; i = i + 10) {
-            if(canWork) {
-                Platform.runLater(new UpdaterCar(i, anchorPane, number));
-                try {
-                    sleep(100);
-                } catch (InterruptedException ex) {
-                    ex.printStackTrace();
-                }
-            }
-        }
-    }
-
-    @Override
-    public void interrupt() {
-        canWork = false;
-    }
-}
-
-class UpdaterCar implements Runnable{
-    private int number;
-    private AnchorPane anchorPane;
-    private int i;
-
-    public UpdaterCar(int i, AnchorPane anchorPane, int number){
-        this.number = number;
-        this.i = i;
-        this.anchorPane = anchorPane;
-    }
-    @Override
-    public void run() {
-        anchorPane.getChildren().get(number).setLayoutX(i);
-    }
-}
-
-class UpdaterAnchorPane implements Runnable{
-    private int number;
-    private AnchorPane anchorPane;
-
-    public UpdaterAnchorPane(int number, AnchorPane anchorPane) {
-        this.number = number;
-        this.anchorPane = anchorPane;
-    }
-
-    @Override
-    public void run() {
-        double probability = 0.5;
-        ImageView imageView = null;
-        if(new Random().nextDouble() <= probability) {
-            imageView = new ImageView(new Image(getClass().getResourceAsStream("../images/carModelling.JPG")));
-            imageView.setFitWidth(45);
-        }
-        else {
-            imageView = new ImageView(new Image(getClass().getResourceAsStream("../images/truckModelling.JPG")));
-            imageView.setFitWidth(55);
-        }
-        imageView.setFitHeight(35);
-        anchorPane.getChildren().add(number, (Node)imageView);
-        anchorPane.getChildren().get(number).setLayoutX(0);
-        anchorPane.getChildren().get(number).setLayoutY(0);
-    }
-}
-
-
-class FlowThread extends Thread{
-    private AnchorPane anchorPane;
-    private boolean canWork;
-    private double booster;
-
-    public FlowThread(AnchorPane anchorPane, double booster){
-        this.anchorPane = anchorPane;
-        canWork = true;
-        this.booster = booster;
-    }
-
-    @Override
-    public void run() {
-        int number = 1;
-        while (canWork){
-            Platform.runLater(new UpdaterAnchorPane(number, anchorPane));
-            CarThread carThread = new CarThread(anchorPane, number);
-            carThread.setName("CarThread" + number);
-            carThread.start();
-            try {
-                int time = getTimeUniform();
-                sleep(time * 1000);
-            }
-            catch (InterruptedException ex){
-                ex.printStackTrace();
-            }
-            number++;
-        }
-    }
-
-    @Override
-    public void interrupt() {
-        canWork = false;
-        for (Node node: anchorPane.getChildren()){
-            if(node instanceof ImageView){
-                node.setVisible(false);
-            }
-        }
-    }
-
-    private int getTimeUniform(){
-        int a = 1;
-        int b = 5;
-        Random random = new Random();
-        return a + random.nextInt(b-a+1);
-    }
-}
-
-class TimeThread extends Thread{
-    private Calendar calendar;
-    private Label clock;
-    private boolean canWork;
-    private double booster;
-
-    public TimeThread(Calendar calendar, Label clock, double booster){
-        this.calendar = calendar;
-        this.clock = clock;
-        this.booster = booster;
-        canWork = true;
-    }
-    @Override
-    public void run() {
-        while (canWork) {
-            Platform.runLater(new UpdaterTime(calendar, clock));
-            try {
-                sleep((long) (1000 / booster));
-            } catch (InterruptedException ignored) {
-
-            }
-            calendar.add(Calendar.SECOND, 1);
-        }
-    }
-    @Override
-    public void interrupt() {
-        canWork = false;
-    }
-
-    public Calendar getCalendar(){
-        return this.calendar;
-    }
-
-    public void setCalendar(Calendar calendar){
-        this.calendar = calendar;
-    }
-
-    public void setBooster(double booster) {
-        this.booster = booster;
-    }
-    public void goOn(){
-        canWork = true;
-    }
-}
-
-class UpdaterTime implements Runnable{
-    private Calendar calendar;
-    private Label clock;
-
-    public UpdaterTime(Calendar calendar, Label clock){
-        this.calendar = calendar;
-        this.clock = clock;
-    }
-    @Override
-    public void run() {
-        if (calendar.get(Calendar.MINUTE) < 10 && calendar.get(Calendar.SECOND) < 10) {
-            clock.setText(calendar.get(Calendar.HOUR_OF_DAY) + ":0" + calendar.get(Calendar.MINUTE) + ":0" + calendar.get(Calendar.SECOND));
-        } else if (calendar.get(Calendar.MINUTE) < 10 && calendar.get(Calendar.SECOND) >= 10) {
-            clock.setText(calendar.get(Calendar.HOUR_OF_DAY) + ":0" + calendar.get(Calendar.MINUTE) + ":" + calendar.get(Calendar.SECOND));
-        } else if (calendar.get(Calendar.MINUTE) > 10 && calendar.get(Calendar.SECOND) < 10) {
-            clock.setText(calendar.get(Calendar.HOUR_OF_DAY) + ":" + calendar.get(Calendar.MINUTE) + ":0" + calendar.get(Calendar.SECOND));
-        } else {
-            clock.setText(calendar.get(Calendar.HOUR_OF_DAY) + ":" + calendar.get(Calendar.MINUTE) + ":" + calendar.get(Calendar.SECOND));
-        }
-    }
-}
-
     /*
     СДЕЛАТЬ:
     1. Появление машин на шоссе (СДЕЛАНО)
     2. Появление типа автомобиля по вероятности (СДЕЛАНО)
     3. Работа с часами (СДЕЛАНО)
-    4. Остановка потоков
-    5. Пауза потоков
-    6. Заезд на парковку по вероятности
-    7. Построение миаршрута до парковочного места
+    4. Остановка потоков (СДЕЛАНО)
+    5. Пауза потоков (СДЕЛАНО)
+    6. Ускорение и замедление машин
+    7. Заезд на парковку по вероятности
+    8. Построение миаршрута до парковочного места
     */

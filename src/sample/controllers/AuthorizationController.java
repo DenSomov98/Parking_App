@@ -96,14 +96,14 @@ public class AuthorizationController {
     }
 
     private void toConstruction() throws IOException{
-        Parent constructionWindow = FXMLLoader.load(getClass().getResource("../fxml/construction.fxml"));
+        Parent constructionWindow = FXMLLoader.load(getClass().getResource("../fxmls/construction.fxml"));
         stage.setTitle("Конструирование");
         stage.setScene(new Scene(constructionWindow, 600, 400));
         stage.show();
     }
 
     private void toModelling() throws IOException{
-        Parent constructionWindow = FXMLLoader.load(getClass().getResource("../fxml/modelling.fxml"));
+        Parent constructionWindow = FXMLLoader.load(getClass().getResource("../fxmls/modelling.fxml"));
         stage.setTitle("Моделирование");
         stage.setScene(new Scene(constructionWindow, 600, 400));
         stage.show();

@@ -52,12 +52,12 @@
                  <items>
                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0" style="-fx-background-color: White;">
                         <children>
-                            <ImageView fx:id="slow" fitHeight="42.0" fitWidth="42.0" pickOnBounds="true" preserveRatio="true">
+                            <ImageView fx:id="slow" fitHeight="42.0" fitWidth="42.0" onMouseClicked="#slowClick" pickOnBounds="true" preserveRatio="true">
                                <image>
                                    <Image url="@../images/back.jpg" />
                                </image>
                             </ImageView>
-                            <ImageView fx:id="pause" fitHeight="42.0" fitWidth="42.0" layoutX="42.0" layoutY="1.0" pickOnBounds="true" preserveRatio="true">
+                            <ImageView fx:id="pause" fitHeight="42.0" fitWidth="42.0" layoutX="42.0" layoutY="1.0" onMouseClicked="#pauseClick" pickOnBounds="true" preserveRatio="true">
                                <image>
                                    <Image url="@../images/pause.jpg" />
                                </image>
@@ -67,7 +67,7 @@
                                    <Image url="@../images/play.jpg" />
                                </image>
                             </ImageView>
-                            <ImageView fx:id="stop" fitHeight="42.0" fitWidth="42.0" layoutX="129.0" layoutY="3.0" onMouseClicked="#stopModelling" pickOnBounds="true" preserveRatio="true">
+                            <ImageView fx:id="stop" fitHeight="42.0" fitWidth="42.0" layoutX="129.0" layoutY="3.0" onMouseClicked="#stopClick" pickOnBounds="true" preserveRatio="true">
                                <image>
                                    <Image url="@../images/stop.jpg" />
                                </image>
