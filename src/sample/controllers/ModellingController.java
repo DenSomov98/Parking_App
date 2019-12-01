@@ -33,6 +33,7 @@ import java.util.Random;
 
 import javafx.scene.control.Label;
 import sample.threads.*;
+import sample.enums.*;
 
 public class ModellingController {
     @FXML
@@ -63,13 +64,21 @@ public class ModellingController {
     private AnchorPane anchorPaneFlow;
 
     private Calendar calendar;
-    private double booster;
+    private Booster booster;
 
     private FlowThread flowThread;
     private TimeThread timeThread;
 
     private boolean isStopped;
     private boolean isPaused;
+
+    private LawType flowType;
+    private int flowParamFirst;
+    private int flowParamSecond;
+
+    private LawType stayType;
+    private int stayParamFirst;
+    private int stayParamSecond;
 
 
     public void initialize(){
@@ -78,8 +87,11 @@ public class ModellingController {
         slow.setDisable(true);
         fast.setDisable(true);
         calendar = new GregorianCalendar();
-        booster = 1;
+        booster = Booster.BOOSTER_DEFAULT;
         drawGridInit();
+        flowType = LawType.NORMAL;
+        flowParamFirst = 2;
+        flowParamSecond = 1;
     }
 
     public static Stage getStage() {
@@ -255,26 +267,31 @@ public class ModellingController {
                     carThread.resumeThread();
                 }
             }
-            //flowThread.goOn();
-            //timeThread.start();
-           // flowThread.start();
         }
         else {
             if(isStopped){
                 isStopped = false;
                 timeThread.setCanWork(true);
+                flowThread.setCanWork(true);
+                Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
+                for (Thread thread : threads.keySet()) {
+                    if(thread.getName().contains("CarThread")){
+                        CarThread carThread = (CarThread)thread;
+                        carThread.setCanWork(true);
+                    }
+                }
             }
             pause.setDisable(false);
             stop.setDisable(false);
             slow.setDisable(false);
             fast.setDisable(false);
-            flowThread = new FlowThread(anchorPaneFlow, booster);
+            flowThread = new FlowThread(anchorPaneFlow, booster.getBoost(), flowParamFirst, flowParamSecond, flowType);
             flowThread.setName("TransportFlowThread");
             flowThread.setDaemon(true);
             calendar.set(Calendar.HOUR_OF_DAY, 12);
             calendar.set(Calendar.MINUTE, 0);
             calendar.set(Calendar.SECOND, 0);
-            timeThread = new TimeThread(calendar, clock, booster);
+            timeThread = new TimeThread(calendar, clock, booster.getBoost());
             timeThread.setName("TimeThread");
             timeThread.setDaemon(true);
             flowThread.start();
@@ -315,18 +332,40 @@ public class ModellingController {
 
     @FXML
     private void fastClick(){
-        booster += 10;
-        timeThread.pauseThread();
-        timeThread.setBooster(booster);
-        timeThread.resumeThread();
+        if(booster.getCode() != 6) {
+            booster = Booster.getBooster(booster.getCode() + 1);
+            if(booster != null) {
+                boostThreads(booster.getBoost());
+            }
+        }
     }
 
     @FXML
     private void slowClick(){
-        booster -= 10;
+        if(booster.getCode() != -6) {
+            booster = Booster.getBooster(booster.getCode() - 1);
+            if(booster != null) {
+                boostThreads(booster.getBoost());
+            }
+        }
+    }
+
+    private void boostThreads(double booster){
         timeThread.pauseThread();
+        flowThread.pauseThread();
         timeThread.setBooster(booster);
+        flowThread.setBooster(booster);
         timeThread.resumeThread();
+        flowThread.resumeThread();
+        Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
+        for (Thread thread : threads.keySet()) {
+            if(thread.getName().contains("CarThread")){
+                CarThread carThread = (CarThread)thread;
+                carThread.pauseThread();
+                carThread.setBooster(booster);
+                carThread.resumeThread();
+            }
+        }
     }
 }
     /*
@@ -336,7 +375,7 @@ public class ModellingController {
     3. Работа с часами (СДЕЛАНО)
     4. Остановка потоков (СДЕЛАНО)
     5. Пауза потоков (СДЕЛАНО)
-    6. Ускорение и замедление машин
+    6. Ускорение и замедление машин (СДЕЛАНО)
     7. Заезд на парковку по вероятности
     8. Построение миаршрута до парковочного места
     */

@@ -8,11 +8,13 @@ public class CarThread extends Thread{
     private AnchorPane anchorPane;
     private int number;
     private boolean canWork;
+    private double booster;
     private volatile boolean isSuspended;
 
-    public CarThread(AnchorPane anchorPane, int number){
+    public CarThread(AnchorPane anchorPane, int number, double booster){
         this.anchorPane = anchorPane;
         this.number = number;
+        this.booster = booster;
         canWork = true;
         isSuspended = false;
     }
@@ -22,7 +24,7 @@ public class CarThread extends Thread{
             if(canWork) {
                 Platform.runLater(new UpdaterCar(i, anchorPane, number));
                 try {
-                    sleep(100);
+                    sleep((long)(100/booster));
                     if(isSuspended){
                         synchronized (this){
                             while (isSuspended){
@@ -44,6 +46,10 @@ public class CarThread extends Thread{
 
     public void setCanWork(boolean canWork){
         this.canWork = canWork;
+    }
+
+    public void setBooster(double booster) {
+        this.booster = booster;
     }
 
     public synchronized void pauseThread(){

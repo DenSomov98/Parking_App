@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
+import sample.enums.LawType;
 import sample.updaters.*;
 
 import java.util.Random;
@@ -13,12 +14,18 @@ public class FlowThread extends Thread {
     private double booster;
     private boolean canWork;
     private volatile boolean isSuspended;
+    private int paramFirst;
+    private int paramSecond;
+    private LawType lawType;
 
-    public FlowThread(AnchorPane anchorPane, double booster){
+    public FlowThread(AnchorPane anchorPane, double booster, int paramFirst, int paramSecond, LawType lawType){
         this.anchorPane = anchorPane;
         this.booster = booster;
         isSuspended = false;
         canWork = true;
+        this.paramFirst = paramFirst;
+        this.paramSecond = paramSecond;
+        this.lawType = lawType;
     }
 
     @Override
@@ -26,12 +33,30 @@ public class FlowThread extends Thread {
         int number = 1;
         while (canWork){
             Platform.runLater(new UpdaterFlow(number, anchorPane));
-            CarThread carThread = new CarThread(anchorPane, number);
+            CarThread carThread = new CarThread(anchorPane, number, booster);
             carThread.setName("CarThread" + number);
             carThread.start();
             try {
-                int time = getTimeUniform();
-                sleep(time * 1000);
+                int time = 0;
+                switch (lawType){
+                    case UNIFORM:{
+                        time = getTimeUniform(paramFirst, paramSecond);
+                        break;
+                    }
+                    case NORMAL:{
+                        time = getTimeNormal(paramFirst, paramSecond);
+                        break;
+                    }
+                    case EXPONENTIAL:{
+                        time = getTimeExponential(paramFirst);
+                        break;
+                    }
+                    case DETERMINE:{
+                        time = paramFirst;
+                        break;
+                    }
+                }
+                sleep((long)(time * 1000/booster));
                 if(isSuspended){
                     synchronized (this){
                         while (isSuspended){
@@ -72,10 +97,22 @@ public class FlowThread extends Thread {
         notify();
     }
 
-    private int getTimeUniform(){
-        int a = 1;
-        int b = 5;
+    private int getTimeUniform(int a, int b){
         Random random = new Random();
         return a + random.nextInt(b-a+1);
+    }
+
+    private int getTimeExponential(int lambda){
+        Random random = new Random();
+        return (int)(-1* Math.log(random.nextDouble())/lambda);
+    }
+
+    private int getTimeNormal(int mathExpectation, int variance){
+        return (int) (Math.sqrt(variance)*getTimeNormalDefault() + mathExpectation);
+    }
+
+    private double getTimeNormalDefault(){
+        Random random = new Random();
+        return random.nextGaussian();
     }
 }
