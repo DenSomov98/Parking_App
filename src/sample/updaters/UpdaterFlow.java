@@ -18,9 +18,9 @@ public class UpdaterFlow implements Runnable{
 
     @Override
     public void run() {
-        double probability = 0.5;
-        ImageView imageView = null;
-        if(new Random().nextDouble() <= probability) {
+        double probabilityCar = 0.5;
+        ImageView imageView;
+        if(new Random().nextDouble() <= probabilityCar) {
             imageView = new ImageView(new Image(getClass().getResourceAsStream("../images/carModelling.JPG")));
             imageView.setFitWidth(45);
         }

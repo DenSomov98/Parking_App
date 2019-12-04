@@ -4,6 +4,8 @@ import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.GridPane;
+import sample.PairIJ;
 import sample.enums.LawType;
 import sample.updaters.*;
 
@@ -11,14 +13,17 @@ import java.util.Random;
 
 public class FlowThread extends Thread {
     private AnchorPane anchorPane;
+    private GridPane gridPane;
     private double booster;
     private boolean canWork;
     private volatile boolean isSuspended;
     private int paramFirst;
     private int paramSecond;
     private LawType lawType;
+    private int coordinateXIn;
+    private PairIJ indexIn;
 
-    public FlowThread(AnchorPane anchorPane, double booster, int paramFirst, int paramSecond, LawType lawType){
+    public FlowThread(AnchorPane anchorPane, double booster, int paramFirst, int paramSecond, LawType lawType, int coordinateXIn, GridPane gridPane, PairIJ indexIn){
         this.anchorPane = anchorPane;
         this.booster = booster;
         isSuspended = false;
@@ -26,6 +31,9 @@ public class FlowThread extends Thread {
         this.paramFirst = paramFirst;
         this.paramSecond = paramSecond;
         this.lawType = lawType;
+        this.coordinateXIn = coordinateXIn;
+        this.gridPane = gridPane;
+        this.indexIn = indexIn;
     }
 
     @Override
@@ -33,7 +41,7 @@ public class FlowThread extends Thread {
         int number = 1;
         while (canWork){
             Platform.runLater(new UpdaterFlow(number, anchorPane));
-            CarThread carThread = new CarThread(anchorPane, number, booster);
+            CarThread carThread = new CarThread(anchorPane, number, booster, coordinateXIn, gridPane, indexIn);
             carThread.setName("CarThread" + number);
             carThread.start();
             try {

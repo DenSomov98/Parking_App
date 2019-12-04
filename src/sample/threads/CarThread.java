@@ -2,7 +2,11 @@ package sample.threads;
 
 import javafx.application.Platform;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.GridPane;
+import sample.PairIJ;
 import sample.updaters.*;
+
+import java.util.Random;
 
 public class CarThread extends Thread{
     private AnchorPane anchorPane;
@@ -10,19 +14,33 @@ public class CarThread extends Thread{
     private boolean canWork;
     private double booster;
     private volatile boolean isSuspended;
+    private int coordinateXIn;
+    private PairIJ indexIn;
+    private GridPane gridPane;
 
-    public CarThread(AnchorPane anchorPane, int number, double booster){
+    public CarThread(AnchorPane anchorPane, int number, double booster, int coordinateXIn, GridPane gridPane, PairIJ indexIn){
         this.anchorPane = anchorPane;
         this.number = number;
         this.booster = booster;
         canWork = true;
         isSuspended = false;
+        this.coordinateXIn = coordinateXIn;
+        this.gridPane = gridPane;
+        this.indexIn = indexIn;
     }
     @Override
     public void run() {
+        boolean isComeIn = false;
+        double probabilityIn = 0.1;
+        if(new Random().nextDouble() <= probabilityIn){
+            isComeIn = true;
+        }
         for (int i = 0; i < anchorPane.getWidth() + 50; i += 10) {
             if(canWork) {
                 Platform.runLater(new UpdaterCar(i, anchorPane, number));
+                if(isComeIn && i > coordinateXIn){
+                    break;
+                }
                 try {
                     sleep((long)(100/booster));
                     if(isSuspended){
@@ -32,7 +50,8 @@ public class CarThread extends Thread{
                             }
                         }
                     }
-                } catch (InterruptedException ex) {
+                }
+                catch (InterruptedException ex) {
                     ex.printStackTrace();
                 }
             }
