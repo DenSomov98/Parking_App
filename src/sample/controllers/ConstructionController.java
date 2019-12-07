@@ -8,9 +8,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.effect.Blend;
-import javafx.scene.effect.ColorInput;
-import javafx.scene.effect.InnerShadow;
+import javafx.scene.effect.*;
 import javafx.scene.image.*;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -18,12 +16,19 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import sample.enums.PatternType;
+import sample.enums.Rotation;
+import sample.models.Parking;
+import sample.models.ParkingCell;
+import sample.models.Pattern;
 
 import java.io.*;
-import java.net.MalformedURLException;
+import java.util.ArrayList;
 
 public class ConstructionController {
     private static Stage stage;
+    private Parking parking;
+
     @FXML
     private ImageView car;
     @FXML
@@ -39,14 +44,6 @@ public class ConstructionController {
     @FXML
     private ImageView cross;
     @FXML
-    private ImageView emptyPattern;
-    private ImageView[] imageViews;
-    private boolean isGreen; // выбран активный шаблон
-    private boolean isRed; // выбран крест
-    private boolean isBlue; // выбран шаблон для перемещения
-    private boolean isPurple; // добавляется грузовик
-
-    @FXML
     private MenuBar menuBar;
     @FXML
     private Spinner<Integer> spinnerHorizontal; // спиннер размеров по горизонтали
@@ -57,9 +54,21 @@ public class ConstructionController {
     @FXML
     private Button check;
 
+    private ImageView emptyPattern;
+    private ImageView[] imageViews;
+    private int countTrucks;
+    private boolean isGreen; // выбран активный шаблон
+    private boolean isRed; // выбран крест
+    private boolean isBlue; // выбран шаблон для перемещения
+    private boolean isPurple; // добавляется грузовик
+    private boolean isMovedTruck; //перемещается грузовик
     private ImageView currentImageView; // текущее изображение
-    private ImageView chosenImageView; // выбранное изображение
-    private Color colorTruck; //цвет выделения грузовика
+    private Pattern currentPattern; // текущий шаблон
+    private Pattern chosenPattern; //выбранный шаблон
+    private int indexRowChosen; // выбранный номер строчки
+    private int indexColumnChosen; // выбранный номер столбца
+    private int indexRowTruckHead;
+    private int indexColumnTruckHead;
 
     public static Stage getStage() {
         return stage;
@@ -69,286 +78,337 @@ public class ConstructionController {
         ConstructionController.stage = stage;
     }
 
+    //инициализация формы конструирования
     @FXML
-    private void initialize() throws MalformedURLException {
-        imageViews = new ImageView[]{car, arrowIn, arrowOut, cash, road, truck, emptyPattern, cross};
-        emptyPattern.setDisable(true);
-        emptyPattern.setVisible(false);
-        drawGridInit(); // изначальное рисование парковки
+    private void initialize() {
+        parking = new Parking(5, 5);
+        imageViews = new ImageView[]{car, arrowIn, arrowOut, cash, road, truck, cross};
+        emptyPattern = new ImageView(new Image(getClass().getResourceAsStream(PatternType.EMPTY.getPath())));
+        drawParkingInit();
         addGridEvent(); // добавление методов обработки нажатий мыши на каждую ячейку
     }
 
+    // изначальное рисование парковки
+    private void drawParkingInit(){
+        for(int i = 0; i < parking.getHorizontalSize(); i++){
+            for(int j = 0; j < parking.getVerticalSize(); j++){
+                ImageView imageView = new ImageView(new Image(getClass().getResourceAsStream(parking.getParkingCells()[i][j].getPattern().getPatternType().getPath())));
+                imageView.setFitHeight((double)373/7);
+                imageView.setFitWidth((double)347/7);
+                imageView.setEffect(getWhiteColorEffect(imageView.getImage().getHeight(), imageView.getImage().getWidth()));
+                GridPane.setHalignment(imageView, HPos.CENTER);
+                GridPane.setValignment(imageView, VPos.CENTER);
+                gridPane.add(imageView, j, i);
+            }
+        }
+    }
+
+    // рисование парковки (пустой)
+    private void drawParking(){
+        removeAllChildren();
+        parking = new Parking((spinnerHorizontal.getValue()), spinnerVertical.getValue());
+        double height = gridPane.getHeight();
+        double width = gridPane.getWidth();
+        int max = Math.max(spinnerVertical.getValue(), spinnerHorizontal.getValue());
+        for(int i = 0; i < parking.getHorizontalSize(); i++){
+            for(int j = 0; j < parking.getVerticalSize(); j++){
+                ImageView imageView = new ImageView(new Image(getClass().getResourceAsStream(parking.getParkingCells()[i][j].getPattern().getPatternType().getPath())));
+                imageView.setFitWidth(width/(max + 2));
+                imageView.setFitHeight(height/(max + 2));
+                imageView.setPreserveRatio(true);
+                imageView.setEffect(getWhiteColorEffect(height/(max + 2), width/(max + 2)));
+                GridPane.setHalignment(imageView, HPos.CENTER);
+                GridPane.setValignment(imageView, VPos.CENTER);
+                GridPane.setMargin(imageView, new Insets(10));
+                gridPane.add(imageView, j, i);
+            }
+        }
+    }
+
+    // обновление парковки (ОБЪЕДИНИТЬ ВЕТКИ)
+    private void updateParking(){
+        removeAllChildren();
+        double height = gridPane.getHeight();
+        double width = gridPane.getWidth();
+        int max = Math.max(spinnerVertical.getValue(), spinnerHorizontal.getValue());
+        for(int i = 0; i < parking.getHorizontalSize(); i++){
+            for(int j = 0; j < parking.getVerticalSize(); j++){
+                ParkingCell parkingCell = parking.getParkingCells()[i][j];
+                ImageView imageView = new ImageView(new Image(getClass().getResourceAsStream(parkingCell.getPattern().getPatternType().getPath())));
+                if(parkingCell.getPattern().getPatternType() != PatternType.TRUCK_HEAD && parkingCell.getPattern().getPatternType() != PatternType.TRUCK_TAIL) {
+                    imageView.setFitWidth(width / (max + 2));
+                    imageView.setFitHeight(height / (max + 2));
+                    imageView.setPreserveRatio(true);
+                    if (parkingCell.getPattern().getPatternType() == PatternType.EMPTY) {
+                        imageView.setEffect(getWhiteColorEffect(height / (max + 2), width / (max + 2)));
+                    }
+                    GridPane.setHalignment(imageView, HPos.CENTER);
+                    GridPane.setValignment(imageView, VPos.CENTER);
+                    GridPane.setMargin(imageView, new Insets(10));
+                }
+                else{
+                    imageView.setFitWidth(width / (max + 2));
+                    imageView.setFitHeight(height / (max + 2));
+                    imageView.setPreserveRatio(true);
+                    switch (parkingCell.getPattern().getRotation()){
+                        case NORTH:{
+                            imageView.setRotate(-90);
+                            break;
+                        }
+                        case EAST:{
+                            imageView.setRotate(0);
+                            break;
+                        }
+                        case SOUTH:{
+                            imageView.setRotate(90);
+                            break;
+                        }
+                        case WEST:{
+                            imageView.setScaleX(-1);
+                            break;
+                        }
+                    }
+                    GridPane.setHalignment(imageView, HPos.CENTER);
+                    GridPane.setValignment(imageView, VPos.CENTER);
+                    GridPane.setMargin(imageView, new Insets(10, 10, 10, 10));
+                }
+                gridPane.add(imageView, j, i);
+            }
+        }
+        addGridEvent();
+    }
+
     @FXML // метод изменения размера по горизонтали
-    private void changeHorizontalSize() throws MalformedURLException{
+    private void changeHorizontalSize(){
         int lengthHorizontal = gridPane.getRowConstraints().size();
         RowConstraints rowConstraints = gridPane.getRowConstraints().get(lengthHorizontal-1);
-        if((int) spinnerHorizontal.getValue() > lengthHorizontal){
+        if(spinnerHorizontal.getValue() > lengthHorizontal){
             gridPane.getRowConstraints().add(rowConstraints);
         }
-        else if((int) spinnerHorizontal.getValue() < lengthHorizontal){
+        else if(spinnerHorizontal.getValue() < lengthHorizontal){
             removeAllChildren();
             gridPane.getRowConstraints().remove(lengthHorizontal-1);
         }
-        drawGrid();
+        drawParking();
         addGridEvent();
     }
+
     @FXML // метод изменения размеров по вертикали
-    private void changeVerticalSize() throws MalformedURLException{
+    private void changeVerticalSize(){
         int lengthVertical = gridPane.getColumnConstraints().size();
         ColumnConstraints columnConstraints = gridPane.getColumnConstraints().get(lengthVertical-1);
-        if((int) spinnerVertical.getValue() > lengthVertical){
+        if(spinnerVertical.getValue() > lengthVertical){
             gridPane.getColumnConstraints().add(columnConstraints);
         }
-        else if((int) spinnerVertical.getValue() < lengthVertical){
+        else if(spinnerVertical.getValue() < lengthVertical){
             removeAllChildren();
             gridPane.getColumnConstraints().remove(lengthVertical-1);
         }
-        drawGrid();
+        drawParking();
         addGridEvent();
     }
+
     //обработчик нажатия мыши на каждую из клеток парковки
     private void addGridEvent(){
         gridPane.getChildren().forEach(item-> item.setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent event) {
-                int truckIndex = 0;
                 ImageView source = (ImageView) event.getSource();
-                if(event.getButton() == MouseButton.PRIMARY&&isGreen&&!isBlue&&currentImageView.getImage() != emptyPattern.getImage()&&currentImageView.getImage() != truck.getImage()) {
-                    source.setEffect(new Blend());
-                    source.setImage(currentImageView.getImage());
-                    if(currentImageView.getImage() == cash.getImage()||currentImageView.getImage() == arrowIn.getImage() ||currentImageView.getImage() == arrowOut.getImage()){
-                        checkUniqueIcons();
-                    }
+                int indexRow = GridPane.getRowIndex(source);
+                int indexColumn = GridPane.getColumnIndex(source);
+                Pattern sourcePattern = parking.getParkingCells()[indexRow][indexColumn].getPattern();
+                //СЛУЧАЙ ДОБАВЛЕНИЯ ШАБЛОНА ИЗ ОДНОЙ КЛЕТКИ (+)
+                if(event.getButton() == MouseButton.PRIMARY && isGreen && !isBlue && currentPattern.getPatternType() != PatternType.EMPTY && currentPattern.getPatternType() != PatternType.TRUCK) {
+                    parking.addPattern(indexRow, indexColumn, currentPattern);
+                    updateParking();
                     checkChangeSpinnerSize();
-                    //checkUniqueIcons();
+                    checkUniqueIcons();
                 }
-                else if(event.getButton() == MouseButton.PRIMARY&&isGreen&&!isBlue&&currentImageView.getImage() != emptyPattern.getImage()&&currentImageView.getImage() == truck.getImage()&&!isPurple){
-                    source.setEffect(new Blend());
+                //СЛУЧАЙ ДОБАВЛЕНИЯ ПЕРЕДНЕЙ ЧАСТИ ГРУЗОВИКА (+)
+                else if(event.getButton() == MouseButton.PRIMARY && isGreen && !isBlue && currentPattern.getPatternType() != PatternType.EMPTY && !isPurple){
                     isPurple = true;
-                    ObservableList<Node> observableList = gridPane.getChildren();
-                    boolean isOk=false;
-                    int rowIndex = GridPane.getRowIndex(source) + 1;
-                    int columnIndex = GridPane.getColumnIndex(source) + 1;
-                    int countRows = gridPane.getRowConstraints().size();
-                    //int columns = gridPane.getColumnCount();
-                    int countColumns = gridPane.getColumnConstraints().size();
-                    int index = (rowIndex - 1)*countColumns+columnIndex;
-                    truckIndex = index;
-                    ImageView[] checkCells = null;
-                    InnerShadow innerShadow = new InnerShadow();
-                    innerShadow.setColor(Color.PURPLE);
-                    if (rowIndex==1) {
-                        if (columnIndex == 1) {
-                            checkCells = new ImageView[]{(ImageView) observableList.get(index + 1),
-                                    (ImageView) observableList.get(index + countColumns)};
-                            for(ImageView imageView: checkCells) {
-                                if (imageView.getImage() == emptyPattern.getImage()) {
-                                    isOk = true;
-                                }
-                            }
-                        }
-                        if (columnIndex == countColumns){
-                            checkCells = new ImageView[]{(ImageView) observableList.get(index - 1),
-                                    (ImageView) observableList.get(index + countColumns)};
-                            for(ImageView imageView: checkCells) {
-                                if (imageView.getImage() == emptyPattern.getImage()) {
-                                    isOk = true;
-                                }
-                            }
-                        }
-                        if (columnIndex != countColumns&&columnIndex != 1){
-                            checkCells = new ImageView[]{(ImageView) observableList.get(index - 1),
-                                    (ImageView) observableList.get(index + 1),
-                                    (ImageView) observableList.get(index + countColumns)};
-                            for(ImageView imageView: checkCells) {
-                                if (imageView.getImage() == emptyPattern.getImage()) {
-                                    isOk = true;
-                                }
-                            }
+                    parking.addPattern(indexRow, indexColumn, new Pattern(PatternType.TRUCK_HEAD));
+                    source.setEffect(getBloomEffect(Color.ORANGE));
+                    ArrayList<Integer> listIndexNearCells = getIndexNearCells(indexRow, indexColumn);
+                    for(int index: listIndexNearCells){
+                        ImageView imageView = (ImageView)gridPane.getChildren().get(index);
+                        imageView.setEffect(getShadowEffect(Color.PURPLE));
+                    }
+                    for(ImageView imageView: imageViews){
+                        if(imageView.getImage() != truck.getImage()){
+                            imageView.setDisable(true);
                         }
                     }
-                    if (rowIndex==countRows) {
-                        if (columnIndex == 1) {
-                            checkCells = new ImageView[]{(ImageView) observableList.get(index + 1),
-                                    (ImageView) observableList.get(index - countColumns)};
-                            for(ImageView imageView: checkCells) {
-                                if (imageView.getImage() == emptyPattern.getImage()) {
-                                    isOk = true;
-                                }
-                            }
-                        }
-                        if (columnIndex == countColumns){
-                            checkCells = new ImageView[]{(ImageView) observableList.get(index - 1),
-                                    (ImageView) observableList.get(index - countColumns)};
-                            for(ImageView imageView: checkCells) {
-                                if (imageView.getImage() == emptyPattern.getImage()) {
-                                    isOk = true;
-                                }
-                            }
-                        }
-                        if (columnIndex != countColumns&&columnIndex != 1){
-                            checkCells = new ImageView[]{(ImageView) observableList.get(index - 1),
-                                    (ImageView) observableList.get(index + 1),
-                                    (ImageView) observableList.get(index - countColumns)};
-                            for(ImageView imageView: checkCells) {
-                                if (imageView.getImage() == emptyPattern.getImage()) {
-                                    isOk = true;
-                                }
-                            }
-                        }
-                    }
-                    if (columnIndex==1) {
-                        if (rowIndex != countRows&&rowIndex != 1){
-                            checkCells = new ImageView[]{(ImageView) observableList.get(index + 1),
-                                    (ImageView) observableList.get(index + countColumns),
-                                    (ImageView) observableList.get(index - countColumns)};
-                            for(ImageView imageView: checkCells) {
-                                if (imageView.getImage() == emptyPattern.getImage()) {
-                                    isOk = true;
-                                }
-                            }
-                        }
-                    }
-                    if (columnIndex==countColumns) {
-                        if (rowIndex != countRows&&rowIndex != 1){
-                            checkCells = new ImageView[]{(ImageView) observableList.get(index - 1),
-                                    (ImageView) observableList.get(index + countColumns),
-                                    (ImageView) observableList.get(index - countColumns)};
-                            for(ImageView imageView: checkCells) {
-                                if (imageView.getImage() == emptyPattern.getImage()) {
-                                    isOk = true;
-                                }
-                            }
-                        }
-                    }
-                    if (rowIndex!=1&&rowIndex!=countRows&&columnIndex!=1&&columnIndex!=countColumns){
-                        checkCells = new ImageView[]{(ImageView) observableList.get(index - 1),
-                                (ImageView) observableList.get(index + 1),
-                                (ImageView) observableList.get(index - countColumns),
-                                (ImageView) observableList.get(index + countColumns)};
-                        for(ImageView imageView: checkCells) {
-                            if (imageView.getImage() == emptyPattern.getImage()) {
-                                isOk = true;
-                            }
-                        }
-                    }
-                    if (isOk) {
-                        InnerShadow innerShadowRandom = new InnerShadow();
-                        colorTruck = Color.color(Math.random(), Math.random(), Math.random());
-                        innerShadowRandom.setColor(colorTruck);
-                        source.setImage(currentImageView.getImage());
-                        source.setEffect(innerShadowRandom);
-                        for (ImageView imageView : checkCells) {
-                            if (imageView.getImage() == emptyPattern.getImage()) {
-                                imageView.setEffect(innerShadow);
-                            }
-                        }
-                        for (ImageView imageView : imageViews) {
-                            if (imageView.getImage() != truck.getImage()) {
-                                imageView.setDisable(true);
-                            }
-                        }
-                    }
-                    else {
-                        isPurple=false;
-                        ColorInput colorInput = new ColorInput();
-                        colorInput.setHeight(source.getFitHeight());
-                        colorInput.setWidth(source.getFitWidth());
-                        colorInput.setPaint(Color.WHITE);
-                        source.setEffect(colorInput);
-                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-
-                        alert.setTitle("Выбрано неподходящее поле");
-                        alert.setHeaderText(null);
-                        alert.setContentText("Выберите другое поле, если хотите поставить там парковочное место для грузовой машины.");
-                        alert.showAndWait();
-                    }
-                    checkChangeSpinnerSize();;
+                    indexRowTruckHead = indexRow;
+                    indexColumnTruckHead = indexColumn;
+                    checkChangeSpinnerSize();
                 }
-                else if(event.getButton() == MouseButton.PRIMARY&&isGreen&&!isBlue&&currentImageView.getImage() != emptyPattern.getImage()&&currentImageView.getImage() == truck.getImage()&&isPurple){
-                    if(source.getEffect() instanceof InnerShadow && source.getImage() != truck.getImage()){
-                        source.setImage(currentImageView.getImage());
-                        InnerShadow innerShadow = new InnerShadow();
-                        innerShadow.setColor(colorTruck);
-                        source.setEffect(innerShadow);
-                        ObservableList<Node> observableList = gridPane.getChildren();
-                        for(int i = 1; i < gridPane.getChildren().size(); i++){
-                            ImageView imageView = (ImageView)observableList.get(i);
-                            if(imageView.getEffect() instanceof InnerShadow && imageView.getImage() != truck.getImage()){
-                                ColorInput colorInput = new ColorInput();
-                                colorInput.setHeight(imageView.getFitHeight());
-                                colorInput.setWidth(imageView.getFitWidth());
-                                colorInput.setPaint(Color.WHITE);
-                                imageView.setEffect(colorInput);
-                            }
-                        }
-                        checkUniqueIcons();
-                        car.setDisable(false);
-                        road.setDisable(false);
-                        truck.setDisable(false);
-                        cross.setDisable(false);
-                        //emptyPattern.setDisable(false);
+                //СЛУЧАЙ ДОБАВЛЕНИЯ ЗАДНЕЙ ЧАСТИ ГРУЗОВИКА (+)
+                else if(event.getButton() == MouseButton.PRIMARY && isGreen && !isBlue && currentPattern.getPatternType() != PatternType.EMPTY){
+                    if(source.getEffect() instanceof InnerShadow) {
                         isPurple = false;
-                        colorTruck = null;
+                        Pattern pattern = new Pattern(PatternType.TRUCK_TAIL);
+                        countTrucks++;
+                        pattern.setId(countTrucks);
+                        parking.getParkingCells()[indexRowTruckHead][indexColumnTruckHead].getPattern().setId(countTrucks);
+                        if(indexRow == indexRowTruckHead - 1){
+                            pattern.setRotation(Rotation.SOUTH);
+                            parking.getParkingCells()[indexRowTruckHead][indexColumnTruckHead].getPattern().setRotation(Rotation.SOUTH);
+                        }
+                        else if(indexRow == indexRowTruckHead + 1){
+                            pattern.setRotation(Rotation.NORTH);
+                            parking.getParkingCells()[indexRowTruckHead][indexColumnTruckHead].getPattern().setRotation(Rotation.NORTH);
+                        }
+                        else if(indexColumn == indexColumnTruckHead - 1){
+                            pattern.setRotation(Rotation.EAST);
+                            parking.getParkingCells()[indexRowTruckHead][indexColumnTruckHead].getPattern().setRotation(Rotation.EAST);
+                        }
+                        else if(indexColumn == indexColumnTruckHead + 1){
+                            pattern.setRotation(Rotation.WEST);
+                            parking.getParkingCells()[indexRowTruckHead][indexColumnTruckHead].getPattern().setRotation(Rotation.WEST);
+                        }
+                        parking.addPattern(indexRow, indexColumn, pattern);
+                        updateParking();
                     }
-                }
-                else if(event.getButton() == MouseButton.PRIMARY&&isRed&&source.getImage() != truck.getImage()){
-                    ColorInput colorInput = new ColorInput();
-                    colorInput.setHeight(source.getFitHeight());
-                    colorInput.setWidth(source.getFitWidth());
-                    colorInput.setPaint(Color.WHITE);
-                    source.setEffect(colorInput);
-                    source.setImage(currentImageView.getImage());
-                    checkChangeSpinnerSize();
-                    checkUniqueIcons();
-                }
-                else if(event.getButton() == MouseButton.PRIMARY&&isRed&&source.getImage() == truck.getImage()){
-                    InnerShadow effectSource = (InnerShadow) source.getEffect();
-                    colorTruck = effectSource.getColor();
-                    ColorInput colorInput = new ColorInput();
-                    colorInput.setHeight(source.getFitHeight());
-                    colorInput.setWidth(source.getFitWidth());
-                    colorInput.setPaint(Color.WHITE);
-                    source.setEffect(colorInput);
-                    source.setImage(currentImageView.getImage());
-                    for(int i = 1; i < gridPane.getChildren().size(); i++){
-                        ImageView imageView = (ImageView) gridPane.getChildren().get(i);
-                        if(imageView.getEffect() instanceof InnerShadow) {
-                            InnerShadow innerShadow = (InnerShadow) imageView.getEffect();
-                            if (innerShadow.getColor().equals(colorTruck)) {
-                                imageView.setEffect(colorInput);
-                                imageView.setImage(currentImageView.getImage());
-                            }
+                    for(ImageView imageView: imageViews){
+                        if(imageView.getImage() != truck.getImage()){
+                            imageView.setDisable(false);
                         }
                     }
                     checkChangeSpinnerSize();
                     checkUniqueIcons();
                 }
-                else if(event.getButton() == MouseButton.SECONDARY&&source.getImage() != emptyPattern.getImage()){
+                //СЛУЧАЙ УДАЛЕНИЯ ШАБЛОНА ИЗ ОДНОЙ КЛЕТКИ (+)
+                else if(event.getButton() == MouseButton.PRIMARY&&isRed&&sourcePattern.getPatternType() != PatternType.TRUCK_HEAD && sourcePattern.getPatternType() != PatternType.TRUCK_TAIL){
+                    parking.removePattern(indexRow, indexColumn);
+                    updateParking();
+                    checkChangeSpinnerSize();
+                    checkUniqueIcons();
+                }
+                //СЛУЧАЙ УДАЛЕНИЯ ГРУЗОВИКА (+)
+                else if(event.getButton() == MouseButton.PRIMARY&&isRed&&(sourcePattern.getPatternType() == PatternType.TRUCK_HEAD || sourcePattern.getPatternType() == PatternType.TRUCK_TAIL)){
+                    int id = sourcePattern.getId();
+                    for(int i = 0; i < parking.getHorizontalSize(); i++){
+                        for (int j = 0; j < parking.getVerticalSize(); j++){
+                            ParkingCell[][] parkingCells = parking.getParkingCells();
+                            if(parkingCells[i][j].getPattern().getId() == id){
+                                parking.removePattern(i, j);
+                            }
+                        }
+                    }
+                    updateParking();
+                    checkChangeSpinnerSize();
+                    checkUniqueIcons();
+                }
+                //СЛУЧАЙ ВЫДЕЛЕНИЯ ШАБЛОНА ИЗ ОДНОЙ КЛЕТКИ (+)
+                else if(event.getButton() == MouseButton.SECONDARY&&sourcePattern.getPatternType() != PatternType.EMPTY&&sourcePattern.getPatternType() != PatternType.TRUCK_HEAD && sourcePattern.getPatternType() != PatternType.TRUCK_TAIL){
                     checkHighlightIcons();
                     checkHighLightChildren();
                     isBlue = true;
                     isRed = false;
                     isGreen = false;
-                    chosenImageView = source;
-                    InnerShadow innerShadow = new InnerShadow();
-                    innerShadow.setColor(Color.BLUE);
-                    source.setEffect(innerShadow);
+                    chosenPattern = parking.getParkingCells()[indexRow][indexColumn].getPattern();
+                    indexRowChosen = indexRow;
+                    indexColumnChosen = indexColumn;
+                    source.setEffect(getShadowEffect(Color.BLUE));
                 }
-                else if(event.getButton() == MouseButton.PRIMARY&&isBlue){
+                //СЛУЧАЙ ПЕРЕМЕЩЕНИЯ ШАБЛОНА ИЗ ОДНОЙ КЛЕТКИ (+)
+                else if(event.getButton() == MouseButton.PRIMARY&&isBlue&&sourcePattern.getPatternType() != PatternType.TRUCK_TAIL && sourcePattern.getPatternType() != PatternType.TRUCK_HEAD&&!isMovedTruck){
                     isBlue = false;
-                    source.setImage(chosenImageView.getImage());
-                    source.setEffect(new Blend());
-                    ColorInput colorInput = new ColorInput();
-                    colorInput.setHeight(chosenImageView.getFitHeight());
-                    colorInput.setWidth(chosenImageView.getFitWidth());
-                    colorInput.setPaint(Color.WHITE);
-                    chosenImageView.setEffect(colorInput);
-                    chosenImageView = null;
+                    parking.addPattern(indexRow, indexColumn, chosenPattern);
+                    parking.removePattern(indexRowChosen, indexColumnChosen);
+                    chosenPattern = new Pattern(PatternType.EMPTY);
+                    updateParking();
                     checkHighLightChildren();
+                    checkUniqueIcons();
+                }
+                //СЛУЧАЙ ВЫДЕЛЕНИЯ ГРУЗОВИКА (+)
+                else if(event.getButton() == MouseButton.SECONDARY&&(sourcePattern.getPatternType() == PatternType.TRUCK_HEAD)){
+                    checkUniqueIcons();
+                    checkHighLightChildren();
+                    chosenPattern = sourcePattern;
+                    indexRowChosen = indexRow;
+                    indexColumnChosen = indexColumn;
+                    isBlue = true;
+                    isMovedTruck = true;
+                    isRed = false;
+                    isGreen = false;
+                    int id = sourcePattern.getId();
+                    for(int i = 0; i < parking.getHorizontalSize(); i++){
+                        for(int j = 0; j < parking.getVerticalSize(); j++){
+                            ParkingCell parkingCell = parking.getParkingCells()[i][j];
+                            if(parkingCell.getPattern().getId() == id){
+                                gridPane.getChildren().get(coordinatesToIndex(i, j)).setEffect(getBloomEffect(Color.BLUE));
+                            }
+                        }
+                    }
+                }
+                //СЛУЧАЙ ПЕРЕМЕЩЕНИЯ ГРУЗОВИКА (+)
+                else if(event.getButton() == MouseButton.PRIMARY&&isBlue&&isMovedTruck&&sourcePattern.getPatternType() != PatternType.TRUCK_TAIL && sourcePattern.getPatternType() != PatternType.TRUCK_HEAD){
+                    isBlue = false;
+                    isMovedTruck = false;
+                    if(chosenPattern.getRotation() == Rotation.EAST && indexColumn != 0){
+                        parking.addPattern(indexRow, indexColumn, chosenPattern);
+                        parking.removePattern(indexRowChosen, indexColumnChosen);
+                        parking.addPattern(indexRow, indexColumn-1, new Pattern(PatternType.TRUCK_TAIL, chosenPattern.getRotation(), chosenPattern.getId()));
+                        parking.removePattern(indexRowChosen, indexColumnChosen - 1);
+                    }
+                    else if(chosenPattern.getRotation() == Rotation.WEST && indexColumn != parking.getVerticalSize() - 1){
+                        parking.addPattern(indexRow, indexColumn, chosenPattern);
+                        parking.removePattern(indexRowChosen, indexColumnChosen);
+                        parking.addPattern(indexRow, indexColumn+1, new Pattern(PatternType.TRUCK_TAIL, chosenPattern.getRotation(), chosenPattern.getId()));
+                        parking.removePattern(indexRowChosen, indexColumnChosen + 1);
+                    }
+                    else if(chosenPattern.getRotation() == Rotation.NORTH && indexRow != parking.getHorizontalSize() - 1){
+                        parking.addPattern(indexRow, indexColumn, chosenPattern);
+                        parking.removePattern(indexRowChosen, indexColumnChosen);
+                        parking.addPattern(indexRow + 1, indexColumn, new Pattern(PatternType.TRUCK_TAIL, chosenPattern.getRotation(), chosenPattern.getId()));
+                        parking.removePattern(indexRowChosen + 1, indexColumnChosen);
+                    }
+                    else if(chosenPattern.getRotation() == Rotation.SOUTH && indexRow != 0){
+                        parking.addPattern(indexRow, indexColumn, chosenPattern);
+                        parking.removePattern(indexRowChosen, indexColumnChosen);
+                        parking.addPattern(indexRow - 1, indexColumn, new Pattern(PatternType.TRUCK_TAIL, chosenPattern.getRotation(), chosenPattern.getId()));
+                        parking.removePattern(indexRowChosen - 1, indexColumnChosen);
+                    }
+                    chosenPattern = new Pattern(PatternType.EMPTY);
+                    updateParking();
+                    checkHighLightChildren();
+                    checkUniqueIcons();
                 }
             }
         }));
+    }
+
+    //возврат списка доступных клеток для установки второй части грузовика
+    private ArrayList<Integer> getIndexNearCells(int currentI, int currentJ){
+        ArrayList<Integer> listIndex = new ArrayList<>();
+        if(currentI != parking.getHorizontalSize() - 1){
+            if(parking.getParkingCells()[currentI + 1][currentJ].getPattern().getPatternType() == PatternType.EMPTY){
+                listIndex.add(coordinatesToIndex(currentI + 1, currentJ));
+            }
+        }
+        if(currentI != 0){
+            if(parking.getParkingCells()[currentI - 1][currentJ].getPattern().getPatternType() == PatternType.EMPTY){
+                listIndex.add(coordinatesToIndex(currentI - 1, currentJ));
+            }
+        }
+        if(currentJ != parking.getVerticalSize() - 1){
+            if(parking.getParkingCells()[currentI][currentJ + 1].getPattern().getPatternType() == PatternType.EMPTY){
+                listIndex.add(coordinatesToIndex(currentI, currentJ + 1));
+            }
+        }
+        if(currentJ != 0){
+            if(parking.getParkingCells()[currentI][currentJ - 1].getPattern().getPatternType() == PatternType.EMPTY){
+                listIndex.add(coordinatesToIndex(currentI, currentJ - 1));
+            }
+        }
+        return listIndex;
+    }
+
+    //координаты парковки в индекс gridPane
+    private int coordinatesToIndex(int i, int j){
+        return (i * parking.getVerticalSize() + j + 1);
     }
 
     @FXML //выбрана машина
@@ -358,11 +418,11 @@ public class ConstructionController {
         isGreen = true;
         checkHighlightIcons();
         checkHighLightChildren();
-        InnerShadow innerShadow = new InnerShadow();
-        innerShadow.setColor(Color.GREEN);
-        car.setEffect(innerShadow);
+        car.setEffect(getShadowEffect(Color.GREEN));
         currentImageView = car;
+        currentPattern = new Pattern(PatternType.CAR);
     }
+
     @FXML //выбран выезд
     private void clickArrowUp(){
         isRed = false;
@@ -370,11 +430,11 @@ public class ConstructionController {
         isGreen = true;
         checkHighlightIcons();
         checkHighLightChildren();
-        InnerShadow innerShadow = new InnerShadow();
-        innerShadow.setColor(Color.GREEN);
-        arrowOut.setEffect(innerShadow);
+        arrowOut.setEffect(getShadowEffect(Color.GREEN));
         currentImageView = arrowOut;
+        currentPattern = new Pattern(PatternType.OUT);
     }
+
     @FXML // выбран въезд
     private void clickArrowDown(){
         isRed = false;
@@ -382,11 +442,11 @@ public class ConstructionController {
         isGreen = true;
         checkHighlightIcons();
         checkHighLightChildren();
-        InnerShadow innerShadow = new InnerShadow();
-        innerShadow.setColor(Color.GREEN);
-        arrowIn.setEffect(innerShadow);
+        arrowIn.setEffect(getShadowEffect(Color.GREEN));
         currentImageView = arrowIn;
+        currentPattern = new Pattern(PatternType.IN);
     }
+
     @FXML // выбрана касса
     private void clickCash(){
         isRed = false;
@@ -394,11 +454,11 @@ public class ConstructionController {
         isGreen = true;
         checkHighlightIcons();
         checkHighLightChildren();
-        InnerShadow innerShadow = new InnerShadow();
-        innerShadow.setColor(Color.GREEN);
-        cash.setEffect(innerShadow);
+        cash.setEffect(getShadowEffect(Color.GREEN));
         currentImageView = cash;
+        currentPattern = new Pattern(PatternType.CASH);
     }
+
     @FXML //выбрана дорога
     private void clickRoad(){
         isRed = false;
@@ -406,11 +466,11 @@ public class ConstructionController {
         isGreen = true;
         checkHighlightIcons();
         checkHighLightChildren();
-        InnerShadow innerShadow = new InnerShadow();
-        innerShadow.setColor(Color.GREEN);
-        road.setEffect(innerShadow);
+        road.setEffect(getShadowEffect(Color.GREEN));
         currentImageView = road;
+        currentPattern = new Pattern(PatternType.ROAD);
     }
+
     @FXML // выбран грузовик
     private void clickTruck(){
         isRed = false;
@@ -418,36 +478,24 @@ public class ConstructionController {
         isGreen = true;
         checkHighlightIcons();
         checkHighLightChildren();
-        InnerShadow innerShadow = new InnerShadow();
-        innerShadow.setColor(Color.GREEN);
-        truck.setEffect(innerShadow);
+        truck.setEffect(getShadowEffect(Color.GREEN));
         currentImageView = truck;
+        currentPattern = new Pattern(PatternType.TRUCK);
     }
-    @FXML  // Todo: убрать этот метод
-    private void clickEmpty(){
-        isRed = false;
-        isBlue = false;
-        isGreen = true;
-        checkHighlightIcons();
-        checkHighLightChildren();
-        InnerShadow innerShadow = new InnerShadow();
-        innerShadow.setColor(Color.GREEN);
-        emptyPattern.setEffect(innerShadow);
-        currentImageView = emptyPattern;
-    }
+
     @FXML // выбран крест удаления
     private void clickCross(){
         isRed = true;
         isBlue = false;
         isGreen = false;
         checkHighlightIcons();
-        checkHighLightChildren();
-        InnerShadow innerShadow = new InnerShadow();
-        innerShadow.setColor(Color.RED);
-        cross.setEffect(innerShadow);
+        checkHighLightChildren();;
+        cross.setEffect(getShadowEffect(Color.RED));
         currentImageView = emptyPattern;
+        currentPattern = new Pattern(PatternType.EMPTY);
     }
-    //проверка наличия только одной выделенного шаблона
+
+    //проверка наличия только одного выделенного шаблона
     private void checkHighlightIcons(){
         for(ImageView elem: imageViews){
             if(elem.getEffect() instanceof InnerShadow){
@@ -455,6 +503,7 @@ public class ConstructionController {
             }
         }
     }
+
     //проверка наличия только одной выделенной клетки на парковке
     private void checkHighLightChildren(){
         ObservableList<Node> observableList = gridPane.getChildren();
@@ -466,35 +515,41 @@ public class ConstructionController {
             }
         }
     }
+
     //проверка наличия только одного въезда, выезда и кассы
     private void checkUniqueIcons(){
-        ObservableList<Node> observableList = gridPane.getChildren();
-        int size = observableList.size();
         int countCash = 0;
         int countArrowIn = 0;
         int countArrowOut = 0;
-        for(int i = 1; i < size; i++){
-            ImageView imageView = (ImageView)observableList.get(i);
-            if(imageView.getImage() == cash.getImage()){
-                cash.setDisable(true);
-                //isGreen = false;
-                cash.setEffect(new Blend());
-                currentImageView = emptyPattern;
-                countCash++;
-            }
-            else if(imageView.getImage() == arrowIn.getImage()){
-                arrowIn.setDisable(true);
-                // isGreen = false;
-                arrowIn.setEffect(new Blend());
-                currentImageView = emptyPattern;
-                countArrowIn++;
-            }
-            else if(imageView.getImage() == arrowOut.getImage()){
-                arrowOut.setDisable(true);
-                //isGreen = false;
-                arrowOut.setEffect(new Blend());
-                currentImageView = emptyPattern;
-                countArrowOut++;
+        for(int i = 0; i < parking.getHorizontalSize(); i++){
+            for(int j = 0; j < parking.getVerticalSize(); j++){
+                if(parking.getParkingCells()[i][j].getPattern().getPatternType() == PatternType.CASH){
+                    cash.setDisable(true);
+                    cash.setEffect(new Blend());
+                    if(currentPattern.getPatternType() == PatternType.CAR) {
+                        currentImageView = emptyPattern;
+                        currentPattern = new Pattern(PatternType.EMPTY);
+                    }
+                    countCash++;
+                }
+                else if(parking.getParkingCells()[i][j].getPattern().getPatternType() == PatternType.IN){
+                    arrowIn.setDisable(true);
+                    arrowIn.setEffect(new Blend());
+                    if(currentPattern.getPatternType() == PatternType.IN) {
+                        currentImageView = emptyPattern;
+                        currentPattern = new Pattern(PatternType.EMPTY);
+                    }
+                    countArrowIn++;
+                }
+                else if(parking.getParkingCells()[i][j].getPattern().getPatternType() == PatternType.OUT){
+                    arrowOut.setDisable(true);
+                    arrowOut.setEffect(new Blend());
+                    if(currentPattern.getPatternType() == PatternType.OUT) {
+                        currentImageView = emptyPattern;
+                        currentPattern = new Pattern(PatternType.EMPTY);
+                    }
+                    countArrowOut++;
+                }
             }
         }
         if(countCash == 0){
@@ -507,73 +562,22 @@ public class ConstructionController {
             arrowIn.setDisable(false);
         }
     }
-    //рисование парковки
-    private void drawGrid() throws MalformedURLException{
-        removeAllChildren();
-        double height = gridPane.getHeight();
-        double width = gridPane.getWidth();
-        int max = Math.max((int)spinnerVertical.getValue(), (int)spinnerHorizontal.getValue());
-        for(int i = 0; i < (int)spinnerHorizontal.getValue(); i++){
-            for(int j = 0; j < (int)spinnerVertical.getValue(); j++){
-                //File file = new File("C:/Users/Денис/IdeaProjects/ParkingApp/src/sample/empty.JPG");
-                //String localPath = file.toURI().toURL().toString();
-                //Image image = new Image(localPath);
-                ImageView imageView = new ImageView();
-                imageView.setImage(emptyPattern.getImage());
-                imageView.setFitWidth(width/(max + 2));
-                imageView.setFitHeight(height/(max + 2));
-                imageView.setPreserveRatio(true);
-                ColorInput colorInput = new ColorInput();
-                colorInput.setHeight(width/(max + 2));
-                colorInput.setWidth(height/(max + 2));
-                colorInput.setPaint(Color.WHITE);
-                imageView.setEffect(colorInput);
-                GridPane.setHalignment(imageView, HPos.CENTER);
-                GridPane.setValignment(imageView, VPos.CENTER);
-                GridPane.setMargin(imageView, new Insets(10));
-                gridPane.add(imageView, j, i);
-            }
-        }
-    }
-    //изначальное рисование парковки
-    private void drawGridInit(){
-        for(int i = 0; i < 5; i++){
-            for(int j = 0; j < 5; j++){
-                /*File file = new File("C:/Users/Денис/IdeaProjects/ParkingApp/src/sample/empty.JPG");
-                String localPath = file.toURI().toURL().toString();
-                Image image = new Image(localPath);
-                ImageView imageView = new ImageView(image);*/
-                ImageView imageView = new ImageView();
-                imageView.setImage(emptyPattern.getImage());
-                imageView.setFitHeight((double)373/7);
-                imageView.setFitWidth((double)347/7);
-                ColorInput colorInput = new ColorInput();
-                colorInput.setHeight(imageView.getImage().getHeight());
-                colorInput.setWidth(imageView.getImage().getWidth());
-                colorInput.setPaint(Color.WHITE);
-                imageView.setEffect(colorInput);
-                GridPane.setHalignment(imageView, HPos.CENTER);
-                GridPane.setValignment(imageView, VPos.CENTER);
-                gridPane.add(imageView, j, i);
-            }
-        }
-    }
+
     //удаление всех ячеек(перед изменением размера парковки)
     private void removeAllChildren(){
         ObservableList<Node> observableList = gridPane.getChildren();
         int size = observableList.size();
-        for(int i = 1; i < size; i++){
-            observableList.remove(1);
+        if (size > 1) {
+            observableList.subList(1, size).clear();
         }
     }
     //проверка на возможность изменять размер парковки
     private boolean ableChangeSize(){
-        ObservableList<Node> observableList = gridPane.getChildren();
-        int size = observableList.size();
-        for(int i = 1; i < size; i++){
-            ImageView imageView = (ImageView)observableList.get(i);
-            if(imageView.getImage() != emptyPattern.getImage()){
-                return false;
+        for(int i = 0; i < parking.getHorizontalSize(); i++){
+            for(int j = 0; j < parking.getVerticalSize(); j++){
+                if(parking.getParkingCells()[i][j].getPattern().getPatternType() != PatternType.EMPTY){
+                    return false;
+                }
             }
         }
         return true;
@@ -592,125 +596,99 @@ public class ConstructionController {
 
     @FXML
     private void saveFile() {
-        int rowCount = gridPane.getRowConstraints().size();
-        int columnCount = gridPane.getColumnConstraints().size();
-        int[][] imageViewMatrix = new int[rowCount][columnCount];
-        int number = 1;
-        for(int i = 0; i < rowCount; i++){
-            for(int j = 0; j < columnCount; j++){
-                int numberWrite = -1;
-                ImageView imageView = (ImageView)gridPane.getChildren().get(number);
-                if(imageView.getImage() == emptyPattern.getImage()){
-                    numberWrite = 0;
-                }
-                else if(imageView.getImage() == car.getImage()){
-                    numberWrite = 1;
-                }
-                else if(imageView.getImage() == arrowIn.getImage()){
-                    numberWrite = 2;
-                }
-                else if(imageView.getImage() == arrowOut.getImage()){
-                    numberWrite = 3;
-                }
-                else if(imageView.getImage() == cash.getImage()){
-                    numberWrite = 4;
-                }
-                else if(imageView.getImage() == road.getImage()){
-                    numberWrite = 5;
-                }
-                else if(imageView.getImage() == truck.getImage()){
-                    numberWrite = 6;
-                }
-                number++;
-                imageViewMatrix[i][j] = numberWrite;
-            }
-        }
         FileChooser fileChooser = new FileChooser();
+        fileChooser.setInitialDirectory(new File("src/parkings"));
         File file = fileChooser.showSaveDialog(new Stage());
-        if(file != null){
+        if (file != null) {
             String path = file.getPath();
             path += ".park";
-            try(FileOutputStream fileOutputStream = new FileOutputStream(path)){
+            try (FileOutputStream fileOutputStream = new FileOutputStream(path)) {
                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
-                objectOutputStream.writeObject(imageViewMatrix);
-            }
-            catch (IOException ex){
+                objectOutputStream.writeObject(parking);
+            } catch (IOException ex) {
                 ex.printStackTrace();
             }
         }
     }
+
     @FXML
     private void loadFile(){
         FileChooser fileChooser = new FileChooser();
+        fileChooser.setInitialDirectory(new File("src/parkings"));
         File file = fileChooser.showOpenDialog(new Stage());
-        if(file != null){
+        if(file != null) {
             int numPoint = file.getName().lastIndexOf('.');
-            if( numPoint > 0 && file.getName().substring(numPoint+1).equals("park")) {
+            if(numPoint > 0 && file.getName().substring(numPoint+1).equals("park")) {
                 try (FileInputStream fileInputStream = new FileInputStream(file)) {
                     ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
-                    int[][] imageViewMatrix = (int[][]) objectInputStream.readObject();
-                    spinnerHorizontal.getValueFactory().setValue((int) imageViewMatrix.length);
-                    spinnerVertical.getValueFactory().setValue((int) imageViewMatrix[0].length);
-                    removeAllChildren();
-                    drawGrid();
-                    int number = 1;
-                    for (int i = 0; i < imageViewMatrix.length; i++) {
-                        for (int j = 0; j < imageViewMatrix[i].length; j++) {
-                            ImageView imageView = (ImageView) gridPane.getChildren().get(number);
-                            switch (imageViewMatrix[i][j]) {
-                                case 1: {
-                                    imageView.setImage(car.getImage());
-                                    imageView.setEffect(new Blend());
-                                    break;
-                                }
-                                case 2: {
-                                    imageView.setImage(arrowIn.getImage());
-                                    imageView.setEffect(new Blend());
-                                    break;
-                                }
-                                case 3: {
-                                    imageView.setImage(arrowOut.getImage());
-                                    imageView.setEffect(new Blend());
-                                    break;
-                                }
-                                case 4: {
-                                    imageView.setImage(cash.getImage());
-                                    imageView.setEffect(new Blend());
-                                    break;
-                                }
-                                case 5: {
-                                    imageView.setImage(road.getImage());
-                                    imageView.setEffect(new Blend());
-                                    break;
-                                }
-                                case 6: {
-                                    imageView.setImage(truck.getImage());
-                                    imageView.setEffect(new Blend());
-                                    break;
-                                }
-                            }
-                            number++;
+                    Parking readParking = (Parking) objectInputStream.readObject();
+                    int horizontalLength = readParking.getHorizontalSize();
+                    int verticalLength = readParking.getVerticalSize();
+                    int difHor = Math.abs(horizontalLength - spinnerHorizontal.getValue());
+                    int difVer = Math.abs(verticalLength - spinnerVertical.getValue());
+                    if(horizontalLength < spinnerHorizontal.getValue()){
+                        for(int i = 0; i < difHor; i++){
+                            spinnerHorizontal.getValueFactory().setValue(spinnerHorizontal.getValue() - 1);
+                            changeHorizontalSize();
                         }
                     }
-                    addGridEvent();
-                    checkUniqueIcons();
+                    if(horizontalLength > spinnerHorizontal.getValue()){
+                        for(int i = 0; i < difHor; i++){
+                            spinnerHorizontal.getValueFactory().setValue(spinnerHorizontal.getValue() + 1);
+                            changeHorizontalSize();
+                        }
+                    }
+                    if(verticalLength < spinnerVertical.getValue()){
+                        for(int i = 0; i < difVer; i++){
+                            spinnerVertical.getValueFactory().setValue(spinnerVertical.getValue() - 1);
+                            changeVerticalSize();
+                        }
+                    }
+                    if(verticalLength > spinnerVertical.getValue()){
+                        for(int i = 0; i < difVer; i++){
+                            spinnerVertical.getValueFactory().setValue(spinnerVertical.getValue() + 1);
+                            changeVerticalSize();
+                        }
+                    }
+                    parking = readParking;
+                    updateParking();
                     checkChangeSpinnerSize();
                     checkHighlightIcons();
                     checkHighLightChildren();
-                }
-                catch (IOException | ClassNotFoundException ex) {
+                } catch (IOException | ClassNotFoundException ex) {
                     ex.printStackTrace();
                 }
             }
-            else {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setTitle("Ошибка");
-                alert.setHeaderText(null);
-                alert.setContentText("Ошибка при загрузке файла!");
-                alert.showAndWait();
-            }
+        }
+        else {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText(null);
+            alert.setContentText("Ошибка при загрузке файла!");
+            alert.showAndWait();
         }
     }
+
+    private ColorInput getWhiteColorEffect(double height, double width){
+        ColorInput colorInput = new ColorInput();
+        colorInput.setHeight(height);
+        colorInput.setWidth(width);
+        colorInput.setPaint(Color.WHITE);
+        return colorInput;
+    }
+
+    private InnerShadow getShadowEffect(Color color){
+        InnerShadow innerShadow = new InnerShadow();
+        innerShadow.setColor(color);
+        return innerShadow;
+    }
+
+    private Bloom getBloomEffect(Color color){
+        Bloom bloom = new Bloom(10);
+        bloom.setInput(getShadowEffect(color));
+        return bloom;
+    }
+
     @FXML
     private void test(){
 
@@ -722,10 +700,10 @@ public class ConstructionController {
     сделать грузовик, который будет занимать 2 места (ГОТОВО!)
     блокировка счетчиков, если на поле есть не пустой шаблон (СДЕЛАНО)
     сделать удаление грузовика (СДЕЛАНО)
-    сделать перемещение грузовика
+    сделать перемещение грузовика (СДЕЛАНО)
     сохранение в файл(корректного и некорректного) (КОРРЕКТНЫЙ СДЕЛАНО)
     загрузка из файла (СДЕЛАНО)
     проверка корректности
-    сделать одинаковый цвет у грузовичка (СДЕЛАНО)
+    вращение въезда, выезда и кассы
      */
 }

@@ -87,19 +87,14 @@
                         <Image url="@../images/cash.JPG" />
                      </image>
                   </ImageView>
-                  <ImageView fx:id="road" fitHeight="53.0" fitWidth="55.0" layoutX="13.0" layoutY="220.0" onMouseClicked="#clickRoad" pickOnBounds="true" preserveRatio="true">
+                  <ImageView fx:id="road" fitHeight="53.0" fitWidth="55.0" layoutX="30.0" layoutY="219.0" onMouseClicked="#clickRoad" pickOnBounds="true" preserveRatio="true">
                      <image>
                         <Image url="@../images/road.JPG" />
                      </image>
                   </ImageView>
-                  <ImageView fx:id="truck" fitHeight="53.0" fitWidth="55.0" layoutX="68.0" layoutY="221.0" onMouseClicked="#clickTruck" pickOnBounds="true" preserveRatio="true">
+                  <ImageView fx:id="truck" fitHeight="53.0" fitWidth="55.0" layoutX="97.0" layoutY="220.0" onMouseClicked="#clickTruck" pickOnBounds="true" preserveRatio="true">
                      <image>
                         <Image url="@../images/bigcar.JPG" />
-                     </image>
-                  </ImageView>
-                  <ImageView fx:id="emptyPattern" fitHeight="53.0" fitWidth="55.0" layoutX="123.0" layoutY="217.0" onMouseClicked="#clickEmpty" pickOnBounds="true" preserveRatio="true">
-                     <image>
-                        <Image url="@../images/empty.JPG" />
                      </image>
                   </ImageView>
                    <Spinner fx:id="spinnerHorizontal" initialValue="5" layoutX="42.0" layoutY="34.0" max="15" min="5" onMouseClicked="#changeHorizontalSize" prefHeight="25.0" prefWidth="149.0">
@@ -113,7 +108,7 @@
                         <Font size="14.0" />
                      </font>
                   </Button>
-                  <ImageView fx:id="cross" fitHeight="44.0" fitWidth="41.0" layoutX="185.0" layoutY="222.0" onMouseClicked="#clickCross" pickOnBounds="true" preserveRatio="true">
+                  <ImageView fx:id="cross" fitHeight="44.0" fitWidth="41.0" layoutX="165.0" layoutY="222.0" onMouseClicked="#clickCross" pickOnBounds="true" preserveRatio="true">
                      <image>
                         <Image url="@../images/cross.JPG" />
                      </image>

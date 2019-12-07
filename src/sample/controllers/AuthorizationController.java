@@ -44,9 +44,9 @@ public class AuthorizationController {
         textBoxPassword.setText("park1ng");
         comboBox.getItems().add("Администратор");
         comboBox.getItems().add("Пользователь");
-        comboBox.getSelectionModel().select("Пользователь");
-        textBoxLogin.setDisable(true);
-        textBoxPassword.setDisable(true);
+        comboBox.getSelectionModel().select("Администратор");
+        //textBoxLogin.setDisable(true);
+        //textBoxPassword.setDisable(true);
     }
 
     @FXML
@@ -74,7 +74,8 @@ public class AuthorizationController {
                 }
             }
             catch (Exception ex) {
-                showErrorWindow(ex.getMessage());
+                ex.printStackTrace();
+                //showErrorWindow(ex.getMessage());
             }
         }
     }
