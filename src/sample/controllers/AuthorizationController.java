@@ -44,9 +44,9 @@ public class AuthorizationController {
         textBoxPassword.setText("park1ng");
         comboBox.getItems().add("Администратор");
         comboBox.getItems().add("Пользователь");
-        comboBox.getSelectionModel().select("Администратор");
-        //textBoxLogin.setDisable(true);
-        //textBoxPassword.setDisable(true);
+        comboBox.getSelectionModel().select("Пользователь");
+        textBoxLogin.setDisable(true);
+        textBoxPassword.setDisable(true);
     }
 
     @FXML
@@ -104,15 +104,16 @@ public class AuthorizationController {
     }
 
     private void toModelling() throws IOException{
-        Parent constructionWindow = FXMLLoader.load(getClass().getResource("../fxmls/modelling.fxml"));
+        Parent modellingWindow = FXMLLoader.load(getClass().getResource("../fxmls/modelling.fxml"));
         stage.setTitle("Моделирование");
-        stage.setScene(new Scene(constructionWindow, 600, 400));
+        stage.setScene(new Scene(modellingWindow, 600, 400));
         stage.show();
     }
 
     private void showErrorWindow(String message){
         Alert alertWindow = new Alert(Alert.AlertType.ERROR);
         alertWindow.setTitle("Ошибка");
+        alertWindow.setHeaderText(null);
         alertWindow.setContentText(message);
         alertWindow.showAndWait();
     }

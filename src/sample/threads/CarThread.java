@@ -15,8 +15,8 @@ public class CarThread extends Thread{
     private double booster;
     private volatile boolean isSuspended;
     private int coordinateXIn;
-    private PairIJ indexIn;
     private GridPane gridPane;
+    private PairIJ indexIn;
 
     public CarThread(AnchorPane anchorPane, int number, double booster, int coordinateXIn, GridPane gridPane, PairIJ indexIn){
         this.anchorPane = anchorPane;
@@ -37,8 +37,14 @@ public class CarThread extends Thread{
         }
         for (int i = 0; i < anchorPane.getWidth() + 50; i += 10) {
             if(canWork) {
-                Platform.runLater(new UpdaterCar(i, anchorPane, number));
+                Platform.runLater(new UpdaterCarInFlow(i, anchorPane, number));
                 if(isComeIn && i > coordinateXIn){
+                    try {
+                        sleep((long) (500 / booster));
+                    }
+                    catch (InterruptedException ex){
+                        ex.printStackTrace();
+                    }
                     break;
                 }
                 try {
@@ -55,6 +61,9 @@ public class CarThread extends Thread{
                     ex.printStackTrace();
                 }
             }
+        }
+        if(isComeIn) {
+            Platform.runLater(new UpdaterCarInParking(number, gridPane, anchorPane, indexIn));
         }
     }
 

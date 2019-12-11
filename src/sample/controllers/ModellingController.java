@@ -10,6 +10,7 @@ import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.effect.Blend;
+import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.ColorInput;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.image.Image;
@@ -37,12 +38,14 @@ import java.util.Random;
 import javafx.scene.control.Label;
 import jdk.internal.util.xml.impl.Pair;
 import sample.PairIJ;
+import sample.models.Parking;
+import sample.models.ParkingCell;
 import sample.threads.*;
 import sample.enums.*;
 
 public class ModellingController {
-    @FXML
     private static Stage stage;
+    private Parking parking;
     @FXML
     private ImageView play;
     @FXML
@@ -87,10 +90,8 @@ public class ModellingController {
     private int stayParamFirst;
     private int stayParamSecond;
 
-    private int[][] maskParking;
-
-
     public void initialize(){
+        parking = new Parking(5, 5);
         play.setDisable(true);
         pause.setDisable(true);
         stop.setDisable(true);
@@ -98,7 +99,7 @@ public class ModellingController {
         fast.setDisable(true);
         calendar = new GregorianCalendar();
         booster = Booster.BOOSTER_DEFAULT;
-        drawGridInit();
+        drawParkingInit();
         //addAnchorFlowClickEvent();
         flowType = LawType.UNIFORM;
         flowParamFirst = 1;
@@ -113,28 +114,54 @@ public class ModellingController {
         ModellingController.stage = stage;
     }
 
-    private void drawGridInit(){
-        for(int i = 0; i < 5; i++){
-            for(int j = 0; j < 5; j++){
-                ImageView imageView = new ImageView();
-                imageView.setImage(new Image(getClass().getResourceAsStream("../images/empty.JPG")));
-                imageView.setFitHeight((double)316/7);
-                imageView.setFitWidth((double)303/7);
-                ColorInput colorInput = new ColorInput();
-                colorInput.setHeight(imageView.getFitHeight());
-                colorInput.setWidth(imageView.getFitWidth());
-                colorInput.setPaint(Color.WHITE);
-                imageView.setEffect(colorInput);
+    private void drawParkingInit(){
+        for(int i = 0; i < parking.getHorizontalSize(); i++){
+            for(int j = 0; j < parking.getVerticalSize(); j++){
+                ImageView imageView = new ImageView(new Image(getClass().getResourceAsStream(parking.getParkingCells()[i][j].getPattern().getPatternType().getPath())));
+                //imageView.setFitHeight((double)316/15);
+                //imageView.setFitWidth((double)303/15);
+                //imageView.setPreserveRatio(true);
+                imageView.setEffect(getWhiteColorEffect(imageView.getImage().getHeight(), imageView.getImage().getWidth()));
                 GridPane.setHalignment(imageView, HPos.CENTER);
                 GridPane.setValignment(imageView, VPos.CENTER);
+                GridPane.setMargin(imageView, new Insets(10));
                 gridPane.add(imageView, j, i);
             }
         }
     }
 
+    private void drawParking(){
+        removeAllChildren();
+        parking = new Parking(parking.getHorizontalSize(), parking.getVerticalSize());
+        double height = gridPane.getHeight();
+        double width = gridPane.getWidth();
+        int max = Math.max(parking.getHorizontalSize(), parking.getVerticalSize());
+        for(int i = 0; i < parking.getHorizontalSize(); i++){
+            for(int j = 0; j < parking.getVerticalSize(); j++){
+                ImageView imageView = new ImageView(new Image(getClass().getResourceAsStream(parking.getParkingCells()[i][j].getPattern().getPatternType().getPath())));
+                imageView.setFitWidth(width/(max + 2));
+                imageView.setFitHeight(height/(max + 2));
+                imageView.setPreserveRatio(true);
+                imageView.setEffect(getWhiteColorEffect(height/(max + 2), width/(max + 2)));
+                GridPane.setHalignment(imageView, HPos.CENTER);
+                GridPane.setValignment(imageView, VPos.CENTER);
+                GridPane.setMargin(imageView, new Insets(10));
+                gridPane.add(imageView, j, i);
+            }
+        }
+    }
+
+    private void removeAllChildren(){
+        ObservableList<Node> observableList = gridPane.getChildren();
+        int size = observableList.size();
+        if (size > 1) {
+            observableList.subList(1, size).clear();
+        }
+    }
+
     @FXML
     private void loadFile(){
-        FileChooser fileChooser = new FileChooser();
+        /*FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialDirectory(new File("D://Денис/Desktop/parkings"));
         File file = fileChooser.showOpenDialog(new Stage());
         if(file != null){
@@ -204,66 +231,174 @@ public class ModellingController {
                 alert.setContentText("Ошибка при загрузке файла!");
                 alert.showAndWait();
             }
+        }*/
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setInitialDirectory(new File("src/parkings"));
+        File file = fileChooser.showOpenDialog(new Stage());
+        if(file != null) {
+            int numPoint = file.getName().lastIndexOf('.');
+            if (numPoint > 0 && file.getName().substring(numPoint + 1).equals("park")) {
+                try (FileInputStream fileInputStream = new FileInputStream(file)) {
+                    ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
+                    Parking readParking = null;
+                    try {
+                        readParking = (Parking) objectInputStream.readObject();
+                    } catch (ClassNotFoundException | ClassCastException ex) {
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Ошибка");
+                        alert.setHeaderText(null);
+                        alert.setContentText("Файл с топологией парковки поврежден! Открытие невозможно. ");
+                        alert.showAndWait();
+                        return;
+                    }
+                    int horizontalLength = readParking.getHorizontalSize();
+                    int verticalLength = readParking.getVerticalSize();
+                    int difHor = Math.abs(horizontalLength - parking.getHorizontalSize());
+                    int difVer = Math.abs(verticalLength - parking.getVerticalSize());
+                    if (horizontalLength < parking.getHorizontalSize()) {
+                        for (int i = 0; i < difHor; i++) {
+                            parking.setHorizontalSize(parking.getHorizontalSize() - 1);
+                            changeHorizontalSize();
+                        }
+                    }
+                    if (horizontalLength > parking.getHorizontalSize()) {
+                        for (int i = 0; i < difHor; i++) {
+                            parking.setHorizontalSize(parking.getHorizontalSize() + 1);
+                            changeHorizontalSize();
+                        }
+                    }
+                    if (verticalLength < parking.getVerticalSize()) {
+                        for (int i = 0; i < difVer; i++) {
+                            parking.setVerticalSize(parking.getVerticalSize() - 1);
+                            changeVerticalSize();
+                        }
+                    }
+                    if (verticalLength > parking.getVerticalSize()) {
+                        for (int i = 0; i < difVer; i++) {
+                            parking.setVerticalSize(parking.getVerticalSize() + 1);
+                            changeVerticalSize();
+                        }
+                    }
+                    parking = readParking;
+                    updateParking();
+                    isLoaded = true;
+                    play.setDisable(false);
+                }
+                catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
         }
     }
 
-    private void removeAllChildren(){
-        ObservableList<Node> observableList = gridPane.getChildren();
-        int size = observableList.size();
-        for(int i = 1; i < size; i++){
-            observableList.remove(1);
+    private void changeHorizontalSize(){
+        int lengthHorizontal = gridPane.getRowConstraints().size();
+        RowConstraints rowConstraints = gridPane.getRowConstraints().get(lengthHorizontal-1);
+        if(parking.getHorizontalSize() > lengthHorizontal){
+            gridPane.getRowConstraints().add(rowConstraints); //view
         }
+        else if(parking.getHorizontalSize() < lengthHorizontal){
+            removeAllChildren();
+            gridPane.getRowConstraints().remove(lengthHorizontal-1); //view
+        }
+        drawParking();
     }
 
-    private void drawGrid(int lengthH, int lengthV){
-        double height = gridPane.getPrefHeight();
-        double width = gridPane.getPrefWidth();
-        int max = Math.max(lengthH, lengthV);
-        for(int i = 0; i < lengthH; i++){
-            for(int j = 0; j < lengthV; j++){
-                ImageView imageView = new ImageView();
-                imageView.setImage(new Image(getClass().getResourceAsStream("../images/empty.JPG")));
-                imageView.setFitWidth(width/(max + 2));
-                imageView.setFitHeight(height/(max + 2));
+    private void changeVerticalSize(){
+        int lengthVertical = gridPane.getColumnConstraints().size();
+        ColumnConstraints columnConstraints = gridPane.getColumnConstraints().get(lengthVertical-1);
+        if(parking.getVerticalSize() > lengthVertical){
+            gridPane.getColumnConstraints().add(columnConstraints); //view
+        }
+        else if(parking.getVerticalSize() < lengthVertical){
+            removeAllChildren();
+            gridPane.getColumnConstraints().remove(lengthVertical-1); //view
+        }
+        drawParking();
+    }
+
+    private void updateParking(){
+        removeAllChildren();
+        double height = gridPane.getHeight();
+        double width = gridPane.getWidth();
+        int max = Math.max(parking.getHorizontalSize(), parking.getVerticalSize());
+        for(int i = 0; i < parking.getHorizontalSize(); i++){
+            for(int j = 0; j < parking.getVerticalSize(); j++){
+                ParkingCell parkingCell = parking.getParkingCells()[i][j];
+                ImageView imageView = new ImageView(new Image(getClass().getResourceAsStream(parkingCell.getPattern().getPatternType().getPath())));
+                imageView.setFitWidth(width / (max + 1));
+                imageView.setFitHeight(height / (max + 1));
                 imageView.setPreserveRatio(true);
-                ColorInput colorInput = new ColorInput();
-                colorInput.setHeight(width/(max + 2));
-                colorInput.setWidth(height/(max + 2));
-                colorInput.setPaint(Color.WHITE);
-                imageView.setEffect(colorInput);
+                imageView.setEffect(getGrayColorEffect());
+                if(parkingCell.getPattern().getPatternType() != PatternType.TRUCK_HEAD && parkingCell.getPattern().getPatternType() != PatternType.TRUCK_TAIL && parkingCell.getPattern().getPatternType() != PatternType.IN && parkingCell.getPattern().getPatternType() != PatternType.OUT) {
+                    if (parkingCell.getPattern().getPatternType() == PatternType.EMPTY) {
+                        imageView.setEffect(getWhiteColorEffect(height / (max + 1), width / (max + 1)));
+                    }
+                }
+                else if(parkingCell.getPattern().getPatternType() == PatternType.TRUCK_HEAD || parkingCell.getPattern().getPatternType() == PatternType.TRUCK_TAIL){
+                    switch (parkingCell.getPattern().getRotation()){
+                        case NORTH:{
+                            imageView.setRotate(-90);
+                            break;
+                        }
+                        case EAST:{
+                            imageView.setRotate(0);
+                            break;
+                        }
+                        case SOUTH:{
+                            imageView.setRotate(90);
+                            break;
+                        }
+                        case WEST:{
+                            imageView.setScaleX(-1);
+                            break;
+                        }
+                    }
+                }
+                else if(parkingCell.getPattern().getPatternType() == PatternType.IN){
+                    switch (parkingCell.getPattern().getRotation()){
+                        case NORTH:{
+                            imageView.setRotate(180);
+                            break;
+                        }
+                        case EAST:{
+                            imageView.setRotate(-90);
+                            break;
+                        }
+                        case SOUTH:{
+                            imageView.setRotate(0);
+                            break;
+                        }
+                        case WEST:{
+                            imageView.setRotate(90);
+                            break;
+                        }
+                    }
+                }
+                else if(parkingCell.getPattern().getPatternType() == PatternType.OUT){
+                    switch (parkingCell.getPattern().getRotation()){
+                        case NORTH:{
+                            imageView.setRotate(0);
+                            break;
+                        }
+                        case EAST:{
+                            imageView.setRotate(90);
+                            break;
+                        }
+                        case SOUTH:{
+                            imageView.setRotate(180);
+                            break;
+                        }
+                        case WEST:{
+                            imageView.setRotate(-90);
+                            break;
+                        }
+                    }
+                }
                 GridPane.setHalignment(imageView, HPos.CENTER);
                 GridPane.setValignment(imageView, VPos.CENTER);
                 GridPane.setMargin(imageView, new Insets(10));
                 gridPane.add(imageView, j, i);
-            }
-        }
-    }
-
-    private void changeGrid(int lengthH, int lengthV){
-        int countRows = gridPane.getRowConstraints().size();
-        int countColumns = gridPane.getColumnConstraints().size();
-        RowConstraints rowConstraints = gridPane.getRowConstraints().get(countRows-1);
-        ColumnConstraints columnConstraints = gridPane.getColumnConstraints().get(countColumns-1);
-        if(countRows < lengthH){
-            for(int i = 0; i < lengthH-countRows; i++){
-                gridPane.getRowConstraints().add(rowConstraints);
-            }
-        }
-        else if(countRows > lengthH){
-            for(int i = 0; i < countRows-lengthH; i++){
-                gridPane.getRowConstraints().remove(countRows-1);
-                countRows--;
-            }
-        }
-        else if(countColumns < lengthV){
-            for(int i = 0; i < lengthV-countColumns; i++){
-                gridPane.getColumnConstraints().add(columnConstraints);
-            }
-        }
-        else if(countColumns > lengthV){
-            for(int i = 0; i < countColumns-lengthH; i++){
-                gridPane.getColumnConstraints().remove(countColumns-1);
-                countColumns--;
             }
         }
     }
@@ -296,6 +431,7 @@ public class ModellingController {
                 }
             }
             if(isLoaded) {
+                play.setDisable(true);
                 pause.setDisable(false);
                 stop.setDisable(false);
                 slow.setDisable(false);
@@ -329,6 +465,7 @@ public class ModellingController {
     @FXML
     private void pauseClick(){
         isPaused = true;
+        play.setDisable(false);
         Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
         for (Thread thread : threads.keySet()) {
             if(thread.getName().equals("TimeThread")){
@@ -384,8 +521,34 @@ public class ModellingController {
         }
     }
 
+    private ColorInput getWhiteColorEffect(double height, double width){
+        ColorInput colorInput = new ColorInput();
+        colorInput.setHeight(height);
+        colorInput.setWidth(width);
+        colorInput.setPaint(Color.WHITE);
+        return colorInput;
+    }
+
+    private ColorAdjust getGrayColorEffect(){
+        ColorAdjust colorAdjust = new ColorAdjust();
+        colorAdjust.setBrightness(0.6);
+        colorAdjust.setContrast(0.09);
+        colorAdjust.setHue(-0.53);
+        colorAdjust.setSaturation(-0.98);
+        return colorAdjust;
+    }
+
     private int getCoordinateXOfIn(){
-        for(int i = 0; i < maskParking.length; i++) {
+        for(int i = 0; i < parking.getHorizontalSize(); i++){
+            for(int j = 0; j < parking.getVerticalSize(); j++){
+                if(parking.getParkingCells()[i][j].getPattern().getPatternType() == PatternType.IN){
+                    int index = coordinatesToIndex(i, j);
+                    return (int)gridPane.getChildren().get(index).getBoundsInParent().getMaxX();
+                }
+            }
+        }
+        return -1;
+        /*for(int i = 0; i < maskParking.length; i++) {
             for (int j = 0; j < maskParking[0].length; j++) {
                 if (maskParking[i][j] == 2) {
                     int index = (i * maskParking[0].length) + j + 1;
@@ -393,13 +556,17 @@ public class ModellingController {
                 }
             }
         }
-        return -1;
+        return -1;*/
+    }
+
+    private int coordinatesToIndex(int i, int j){
+        return (i * parking.getVerticalSize() + j + 1);
     }
 
     private PairIJ getPairIJIn(){
-        for(int i = 0; i < maskParking.length; i++){
-            for(int j = 0; j < maskParking[0].length; j++){
-                if(maskParking[i][j] == 2){
+        for(int i = 0; i < parking.getHorizontalSize(); i++){
+            for(int j = 0; j < parking.getVerticalSize(); j++){
+                if(parking.getParkingCells()[i][j].getPattern().getPatternType() == PatternType.IN){
                     return new PairIJ(i, j);
                 }
             }

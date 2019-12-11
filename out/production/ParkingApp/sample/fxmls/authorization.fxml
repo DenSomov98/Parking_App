@@ -13,36 +13,16 @@
 
 <BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="300.0" prefWidth="402.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.controllers.AuthorizationController">
    <center>
-      <AnchorPane prefHeight="316.0" prefWidth="402.0" BorderPane.alignment="CENTER">
+      <AnchorPane prefHeight="300.0" prefWidth="289.0" BorderPane.alignment="CENTER">
          <children>
-            <Label fx:id="chooseRole" layoutX="31.0" layoutY="34.0" prefHeight="27.0" prefWidth="145.0" text="Выберите роль" AnchorPane.bottomAnchor="249.0" AnchorPane.leftAnchor="31.0" AnchorPane.rightAnchor="226.0" AnchorPane.topAnchor="34.0">
-               <font>
-                  <Font size="18.0" />
-               </font>
-            </Label>
-            <ComboBox fx:id="comboBox" layoutX="176.0" layoutY="35.0" onAction="#changeElement" prefHeight="25.0" prefWidth="159.0" />
-            <Label fx:id="login" layoutX="104.0" layoutY="90.0" text="Логин">
-               <font>
-                  <Font size="18.0" />
-               </font>
-            </Label>
-            <TextField fx:id="textBoxLogin" layoutX="176.0" layoutY="91.0" prefHeight="25.0" prefWidth="162.0" />
-            <Label fx:id="password" layoutX="99.0" layoutY="142.0" text="Пароль">
-               <font>
-                  <Font size="18.0" />
-               </font>
-            </Label>
-            <PasswordField fx:id="textBoxPassword" layoutX="176.0" layoutY="143.0" prefHeight="25.0" prefWidth="162.0" />
-            <Button fx:id="buttonEntry" layoutX="52.0" layoutY="259.0" mnemonicParsing="false" onMouseClicked="#clickEntry" prefHeight="39.0" prefWidth="100.0" text="Войти">
-               <font>
-                  <Font size="18.0" />
-               </font>
-            </Button>
-            <Button fx:id="buttonExit" layoutX="277.0" layoutY="259.0" mnemonicParsing="false" onMouseClicked="#clickCancel" text="Отмена">
-               <font>
-                  <Font size="18.0" />
-               </font>
-            </Button>
+            <Label fx:id="chooseRole" layoutX="14.0" layoutY="21.0" prefHeight="17.0" prefWidth="94.0" text="Выберите роль" AnchorPane.bottomAnchor="262.0" AnchorPane.leftAnchor="14.0" AnchorPane.rightAnchor="294.0" AnchorPane.topAnchor="21.0" />
+            <ComboBox fx:id="comboBox" layoutX="111.0" layoutY="17.0" onAction="#changeElement" prefHeight="25.0" prefWidth="162.0" />
+            <Label fx:id="login" layoutX="58.0" layoutY="58.0" text="Логин" />
+            <TextField fx:id="textBoxLogin" layoutX="111.0" layoutY="54.0" prefHeight="25.0" prefWidth="162.0" />
+            <Label fx:id="password" layoutX="53.0" layoutY="89.0" text="Пароль" />
+            <PasswordField fx:id="textBoxPassword" layoutX="111.0" layoutY="85.0" prefHeight="25.0" prefWidth="162.0" />
+            <Button fx:id="buttonEntry" layoutX="86.0" layoutY="125.0" mnemonicParsing="false" onMouseClicked="#clickEntry" text="Войти" />
+            <Button fx:id="buttonExit" layoutX="183.0" layoutY="125.0" mnemonicParsing="false" onMouseClicked="#clickCancel" text="Отмена" />
          </children>
       </AnchorPane>
    </center>

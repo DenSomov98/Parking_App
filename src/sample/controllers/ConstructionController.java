@@ -16,6 +16,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import sample.PairIJ;
 import sample.enums.PatternType;
 import sample.enums.Rotation;
 import sample.models.Parking;
@@ -30,7 +31,7 @@ public class ConstructionController {
     private Parking parking;
 
     @FXML
-    private ImageView car;
+    protected ImageView car;
     @FXML
     private ImageView arrowIn;
     @FXML
@@ -53,6 +54,8 @@ public class ConstructionController {
     private GridPane gridPane; // сетка
     @FXML
     private Button check;
+    @FXML
+    private Button toModelling;
 
     private ImageView emptyPattern;
     private ImageView[] imageViews;
@@ -62,6 +65,7 @@ public class ConstructionController {
     private boolean isBlue; // выбран шаблон для перемещения
     private boolean isPurple; // добавляется грузовик
     private boolean isMovedTruck; //перемещается грузовик
+    private boolean isCorrectTopology; // признак корректности топологии
     private ImageView currentImageView; // текущее изображение
     private Pattern currentPattern; // текущий шаблон
     private Pattern chosenPattern; //выбранный шаблон
@@ -84,6 +88,8 @@ public class ConstructionController {
         parking = new Parking(5, 5);
         imageViews = new ImageView[]{car, arrowIn, arrowOut, cash, road, truck, cross};
         emptyPattern = new ImageView(new Image(getClass().getResourceAsStream(PatternType.EMPTY.getPath())));
+        spinnerHorizontal.setEditable(false);
+        spinnerVertical.setEditable(false);
         drawParkingInit();
         addGridEvent(); // добавление методов обработки нажатий мыши на каждую ячейку
     }
@@ -95,15 +101,17 @@ public class ConstructionController {
                 ImageView imageView = new ImageView(new Image(getClass().getResourceAsStream(parking.getParkingCells()[i][j].getPattern().getPatternType().getPath())));
                 imageView.setFitHeight((double)373/7);
                 imageView.setFitWidth((double)347/7);
+                imageView.setPreserveRatio(true);
                 imageView.setEffect(getWhiteColorEffect(imageView.getImage().getHeight(), imageView.getImage().getWidth()));
                 GridPane.setHalignment(imageView, HPos.CENTER);
                 GridPane.setValignment(imageView, VPos.CENTER);
+                GridPane.setMargin(imageView, new Insets(10));
                 gridPane.add(imageView, j, i);
             }
         }
     }
 
-    // рисование парковки (пустой)
+    // рисование парковки (пустой) //view
     private void drawParking(){
         removeAllChildren();
         parking = new Parking((spinnerHorizontal.getValue()), spinnerVertical.getValue());
@@ -125,7 +133,7 @@ public class ConstructionController {
         }
     }
 
-    // обновление парковки (ОБЪЕДИНИТЬ ВЕТКИ)
+    // обновление парковки (ОБЪЕДИНИТЬ ВЕТКИ) //view
     private void updateParking(){
         removeAllChildren();
         double height = gridPane.getHeight();
@@ -135,21 +143,15 @@ public class ConstructionController {
             for(int j = 0; j < parking.getVerticalSize(); j++){
                 ParkingCell parkingCell = parking.getParkingCells()[i][j];
                 ImageView imageView = new ImageView(new Image(getClass().getResourceAsStream(parkingCell.getPattern().getPatternType().getPath())));
-                if(parkingCell.getPattern().getPatternType() != PatternType.TRUCK_HEAD && parkingCell.getPattern().getPatternType() != PatternType.TRUCK_TAIL) {
-                    imageView.setFitWidth(width / (max + 2));
-                    imageView.setFitHeight(height / (max + 2));
-                    imageView.setPreserveRatio(true);
+                imageView.setFitWidth(width / (max + 1));
+                imageView.setFitHeight(height / (max + 1));
+                imageView.setPreserveRatio(true);
+                if(parkingCell.getPattern().getPatternType() != PatternType.TRUCK_HEAD && parkingCell.getPattern().getPatternType() != PatternType.TRUCK_TAIL && parkingCell.getPattern().getPatternType() != PatternType.IN && parkingCell.getPattern().getPatternType() != PatternType.OUT) {
                     if (parkingCell.getPattern().getPatternType() == PatternType.EMPTY) {
-                        imageView.setEffect(getWhiteColorEffect(height / (max + 2), width / (max + 2)));
+                        imageView.setEffect(getWhiteColorEffect(height / (max + 1), width / (max + 1)));
                     }
-                    GridPane.setHalignment(imageView, HPos.CENTER);
-                    GridPane.setValignment(imageView, VPos.CENTER);
-                    GridPane.setMargin(imageView, new Insets(10));
                 }
-                else{
-                    imageView.setFitWidth(width / (max + 2));
-                    imageView.setFitHeight(height / (max + 2));
-                    imageView.setPreserveRatio(true);
+                else if(parkingCell.getPattern().getPatternType() == PatternType.TRUCK_HEAD || parkingCell.getPattern().getPatternType() == PatternType.TRUCK_TAIL){
                     switch (parkingCell.getPattern().getRotation()){
                         case NORTH:{
                             imageView.setRotate(-90);
@@ -168,10 +170,50 @@ public class ConstructionController {
                             break;
                         }
                     }
-                    GridPane.setHalignment(imageView, HPos.CENTER);
-                    GridPane.setValignment(imageView, VPos.CENTER);
-                    GridPane.setMargin(imageView, new Insets(10, 10, 10, 10));
                 }
+                else if(parkingCell.getPattern().getPatternType() == PatternType.IN){
+                    switch (parkingCell.getPattern().getRotation()){
+                        case NORTH:{
+                            imageView.setRotate(180);
+                            break;
+                        }
+                        case EAST:{
+                            imageView.setRotate(-90);
+                            break;
+                        }
+                        case SOUTH:{
+                            imageView.setRotate(0);
+                            break;
+                        }
+                        case WEST:{
+                            imageView.setRotate(90);
+                            break;
+                        }
+                    }
+                }
+                else if(parkingCell.getPattern().getPatternType() == PatternType.OUT){
+                    switch (parkingCell.getPattern().getRotation()){
+                        case NORTH:{
+                            imageView.setRotate(0);
+                            break;
+                        }
+                        case EAST:{
+                            imageView.setRotate(90);
+                            break;
+                        }
+                        case SOUTH:{
+                            imageView.setRotate(180);
+                            break;
+                        }
+                        case WEST:{
+                            imageView.setRotate(-90);
+                            break;
+                        }
+                    }
+                }
+                GridPane.setHalignment(imageView, HPos.CENTER);
+                GridPane.setValignment(imageView, VPos.CENTER);
+                GridPane.setMargin(imageView, new Insets(10));
                 gridPane.add(imageView, j, i);
             }
         }
@@ -183,11 +225,11 @@ public class ConstructionController {
         int lengthHorizontal = gridPane.getRowConstraints().size();
         RowConstraints rowConstraints = gridPane.getRowConstraints().get(lengthHorizontal-1);
         if(spinnerHorizontal.getValue() > lengthHorizontal){
-            gridPane.getRowConstraints().add(rowConstraints);
+            gridPane.getRowConstraints().add(rowConstraints); //view
         }
         else if(spinnerHorizontal.getValue() < lengthHorizontal){
             removeAllChildren();
-            gridPane.getRowConstraints().remove(lengthHorizontal-1);
+            gridPane.getRowConstraints().remove(lengthHorizontal-1); //view
         }
         drawParking();
         addGridEvent();
@@ -198,11 +240,11 @@ public class ConstructionController {
         int lengthVertical = gridPane.getColumnConstraints().size();
         ColumnConstraints columnConstraints = gridPane.getColumnConstraints().get(lengthVertical-1);
         if(spinnerVertical.getValue() > lengthVertical){
-            gridPane.getColumnConstraints().add(columnConstraints);
+            gridPane.getColumnConstraints().add(columnConstraints); //view
         }
         else if(spinnerVertical.getValue() < lengthVertical){
             removeAllChildren();
-            gridPane.getColumnConstraints().remove(lengthVertical-1);
+            gridPane.getColumnConstraints().remove(lengthVertical-1); //view
         }
         drawParking();
         addGridEvent();
@@ -218,20 +260,23 @@ public class ConstructionController {
                 int indexColumn = GridPane.getColumnIndex(source);
                 Pattern sourcePattern = parking.getParkingCells()[indexRow][indexColumn].getPattern();
                 //СЛУЧАЙ ДОБАВЛЕНИЯ ШАБЛОНА ИЗ ОДНОЙ КЛЕТКИ (+)
-                if(event.getButton() == MouseButton.PRIMARY && isGreen && !isBlue && currentPattern.getPatternType() != PatternType.EMPTY && currentPattern.getPatternType() != PatternType.TRUCK) {
+                if(event.getButton() == MouseButton.PRIMARY && isGreen && !isBlue && currentPattern.getPatternType() != PatternType.EMPTY && currentPattern.getPatternType() != PatternType.TRUCK_HEAD && sourcePattern.getPatternType() != PatternType.TRUCK_HEAD && sourcePattern.getPatternType() != PatternType.TRUCK_TAIL) {
+                    if(currentPattern.getPatternType() == PatternType.IN || currentPattern.getPatternType() == PatternType.OUT){
+                        rotateINOUT(currentPattern ,indexRow, indexColumn);
+                    }
                     parking.addPattern(indexRow, indexColumn, currentPattern);
                     updateParking();
                     checkChangeSpinnerSize();
                     checkUniqueIcons();
                 }
                 //СЛУЧАЙ ДОБАВЛЕНИЯ ПЕРЕДНЕЙ ЧАСТИ ГРУЗОВИКА (+)
-                else if(event.getButton() == MouseButton.PRIMARY && isGreen && !isBlue && currentPattern.getPatternType() != PatternType.EMPTY && !isPurple){
+                else if(event.getButton() == MouseButton.PRIMARY && isGreen && !isBlue && currentPattern.getPatternType() != PatternType.EMPTY && sourcePattern.getPatternType() != PatternType.TRUCK_HEAD && sourcePattern.getPatternType() != PatternType.TRUCK_TAIL && !isPurple){
                     isPurple = true;
                     parking.addPattern(indexRow, indexColumn, new Pattern(PatternType.TRUCK_HEAD));
                     source.setEffect(getBloomEffect(Color.ORANGE));
-                    ArrayList<Integer> listIndexNearCells = getIndexNearCells(indexRow, indexColumn);
-                    for(int index: listIndexNearCells){
-                        ImageView imageView = (ImageView)gridPane.getChildren().get(index);
+                    ArrayList<PairIJ> listIndexNearCells = getIndexNearCellsTruck(indexRow, indexColumn);
+                    for(PairIJ pair: listIndexNearCells){
+                        ImageView imageView = (ImageView)gridPane.getChildren().get(coordinatesToIndex(pair.getI(), pair.getJ()));
                         imageView.setEffect(getShadowEffect(Color.PURPLE));
                     }
                     for(ImageView imageView: imageViews){
@@ -314,9 +359,12 @@ public class ConstructionController {
                 }
                 //СЛУЧАЙ ПЕРЕМЕЩЕНИЯ ШАБЛОНА ИЗ ОДНОЙ КЛЕТКИ (+)
                 else if(event.getButton() == MouseButton.PRIMARY&&isBlue&&sourcePattern.getPatternType() != PatternType.TRUCK_TAIL && sourcePattern.getPatternType() != PatternType.TRUCK_HEAD&&!isMovedTruck){
+                    if(chosenPattern.getPatternType() == PatternType.IN || chosenPattern.getPatternType() == PatternType.OUT){
+                        rotateINOUT(chosenPattern ,indexRow, indexColumn);
+                    }
                     isBlue = false;
-                    parking.addPattern(indexRow, indexColumn, chosenPattern);
                     parking.removePattern(indexRowChosen, indexColumnChosen);
+                    parking.addPattern(indexRow, indexColumn, chosenPattern);
                     chosenPattern = new Pattern(PatternType.EMPTY);
                     updateParking();
                     checkHighLightChildren();
@@ -376,34 +424,154 @@ public class ConstructionController {
                     checkHighLightChildren();
                     checkUniqueIcons();
                 }
+                else if(event.getClickCount() == 2 && sourcePattern.getPatternType() == PatternType.IN){
+                    Rotation currentRotation = sourcePattern.getRotation();
+                    if(indexRow == 0 && indexColumn == 0){
+                        if(currentRotation == Rotation.SOUTH){
+                            sourcePattern.setRotation(Rotation.EAST);
+                        }
+                        else{
+                            sourcePattern.setRotation(Rotation.SOUTH);
+                        }
+                    }
+                    else if(indexRow == 0 && indexColumn == parking.getVerticalSize() - 1){
+                        if(currentRotation == Rotation.SOUTH){
+                            sourcePattern.setRotation(Rotation.WEST);
+                        }
+                        else{
+                            sourcePattern.setRotation(Rotation.SOUTH);
+                        }
+                    }
+                    else if(indexColumn == 0 && indexRow == parking.getHorizontalSize() - 1){
+                        if(currentRotation == Rotation.NORTH){
+                            sourcePattern.setRotation(Rotation.EAST);
+                        }
+                        else{
+                            sourcePattern.setRotation(Rotation.NORTH);
+                        }
+                    }
+                    else if(indexColumn == parking.getVerticalSize() - 1 && indexRow == parking.getHorizontalSize() - 1){
+                        if(currentRotation == Rotation.NORTH){
+                            sourcePattern.setRotation(Rotation.WEST);
+                        }
+                        else{
+                            sourcePattern.setRotation(Rotation.NORTH);
+                        }
+                    }
+                    updateParking();
+                }
+                else if(event.getClickCount() == 2 && sourcePattern.getPatternType() == PatternType.OUT){
+                    Rotation currentRotation = sourcePattern.getRotation();
+                    if(indexRow == 0 && indexColumn == 0){
+                        if(currentRotation == Rotation.NORTH){
+                            sourcePattern.setRotation(Rotation.WEST);
+                        }
+                        else{
+                            sourcePattern.setRotation(Rotation.NORTH);
+                        }
+                    }
+                    else if(indexRow == 0 && indexColumn == parking.getVerticalSize() - 1){
+                        if(currentRotation == Rotation.NORTH){
+                            sourcePattern.setRotation(Rotation.EAST);
+                        }
+                        else{
+                            sourcePattern.setRotation(Rotation.NORTH);
+                        }
+                    }
+                    else if(indexColumn == 0 && indexRow == parking.getHorizontalSize() - 1){
+                        if(currentRotation == Rotation.SOUTH){
+                            sourcePattern.setRotation(Rotation.WEST);
+                        }
+                        else{
+                            sourcePattern.setRotation(Rotation.SOUTH);
+                        }
+                    }
+                    else if(indexColumn == parking.getVerticalSize() - 1 && indexRow == parking.getHorizontalSize() - 1){
+                        if(currentRotation == Rotation.SOUTH){
+                            sourcePattern.setRotation(Rotation.EAST);
+                        }
+                        else{
+                            sourcePattern.setRotation(Rotation.SOUTH);
+                        }
+                    }
+                    updateParking();
+                }
             }
         }));
     }
 
     //возврат списка доступных клеток для установки второй части грузовика
-    private ArrayList<Integer> getIndexNearCells(int currentI, int currentJ){
-        ArrayList<Integer> listIndex = new ArrayList<>();
+    private ArrayList<PairIJ> getIndexNearCellsTruck(int currentI, int currentJ){
+        ArrayList<PairIJ> listIndex = new ArrayList<>();
         if(currentI != parking.getHorizontalSize() - 1){
             if(parking.getParkingCells()[currentI + 1][currentJ].getPattern().getPatternType() == PatternType.EMPTY){
-                listIndex.add(coordinatesToIndex(currentI + 1, currentJ));
+                listIndex.add(new PairIJ(currentI + 1, currentJ));
             }
         }
         if(currentI != 0){
             if(parking.getParkingCells()[currentI - 1][currentJ].getPattern().getPatternType() == PatternType.EMPTY){
-                listIndex.add(coordinatesToIndex(currentI - 1, currentJ));
+                listIndex.add(new PairIJ(currentI - 1, currentJ));
             }
         }
         if(currentJ != parking.getVerticalSize() - 1){
             if(parking.getParkingCells()[currentI][currentJ + 1].getPattern().getPatternType() == PatternType.EMPTY){
-                listIndex.add(coordinatesToIndex(currentI, currentJ + 1));
+                listIndex.add(new PairIJ(currentI, currentJ + 1));
             }
         }
         if(currentJ != 0){
             if(parking.getParkingCells()[currentI][currentJ - 1].getPattern().getPatternType() == PatternType.EMPTY){
-                listIndex.add(coordinatesToIndex(currentI, currentJ - 1));
+                listIndex.add(new PairIJ(currentI, currentJ - 1));
             }
         }
         return listIndex;
+    }
+
+    private ArrayList<PairIJ> getIndexNearCells(int currentI, int currentJ){
+        ArrayList<PairIJ> listIndex = new ArrayList<>();
+        if(currentI != parking.getHorizontalSize() - 1){
+            listIndex.add(new PairIJ(currentI + 1, currentJ));
+        }
+        if(currentI != 0){
+            listIndex.add(new PairIJ(currentI - 1, currentJ));
+        }
+        if(currentJ != parking.getVerticalSize() - 1){
+            listIndex.add(new PairIJ(currentI, currentJ + 1));
+        }
+        if(currentJ != 0){
+            listIndex.add(new PairIJ(currentI, currentJ - 1));
+        }
+        return listIndex;
+    }
+
+    private void rotateINOUT(Pattern pattern, int indexRow, int indexColumn){
+        if(pattern.getPatternType() == PatternType.IN){
+            if(indexRow == 0){
+                pattern.setRotation(Rotation.SOUTH);
+            }
+            else if(indexRow == parking.getHorizontalSize() - 1){
+                pattern.setRotation(Rotation.NORTH);
+            }
+            else if(indexColumn == 0){
+                pattern.setRotation(Rotation.EAST);
+            }
+            else if(indexColumn == parking.getVerticalSize() - 1){
+                pattern.setRotation(Rotation.WEST);
+            }
+        }
+        else {
+            if(indexRow == 0){
+                pattern.setRotation(Rotation.NORTH);
+            }
+            else if(indexRow == parking.getHorizontalSize() - 1){
+                pattern.setRotation(Rotation.SOUTH);
+            }
+            else if(indexColumn == 0){
+                pattern.setRotation(Rotation.WEST);
+            }
+            else if(indexColumn == parking.getVerticalSize() - 1){
+                pattern.setRotation(Rotation.EAST);
+            }
+        }
     }
 
     //координаты парковки в индекс gridPane
@@ -418,7 +586,7 @@ public class ConstructionController {
         isGreen = true;
         checkHighlightIcons();
         checkHighLightChildren();
-        car.setEffect(getShadowEffect(Color.GREEN));
+        car.setEffect(getShadowEffect(Color.GREEN)); //view
         currentImageView = car;
         currentPattern = new Pattern(PatternType.CAR);
     }
@@ -430,7 +598,7 @@ public class ConstructionController {
         isGreen = true;
         checkHighlightIcons();
         checkHighLightChildren();
-        arrowOut.setEffect(getShadowEffect(Color.GREEN));
+        arrowOut.setEffect(getShadowEffect(Color.GREEN)); //view
         currentImageView = arrowOut;
         currentPattern = new Pattern(PatternType.OUT);
     }
@@ -442,7 +610,7 @@ public class ConstructionController {
         isGreen = true;
         checkHighlightIcons();
         checkHighLightChildren();
-        arrowIn.setEffect(getShadowEffect(Color.GREEN));
+        arrowIn.setEffect(getShadowEffect(Color.GREEN)); //view
         currentImageView = arrowIn;
         currentPattern = new Pattern(PatternType.IN);
     }
@@ -454,7 +622,7 @@ public class ConstructionController {
         isGreen = true;
         checkHighlightIcons();
         checkHighLightChildren();
-        cash.setEffect(getShadowEffect(Color.GREEN));
+        cash.setEffect(getShadowEffect(Color.GREEN)); //view
         currentImageView = cash;
         currentPattern = new Pattern(PatternType.CASH);
     }
@@ -466,7 +634,7 @@ public class ConstructionController {
         isGreen = true;
         checkHighlightIcons();
         checkHighLightChildren();
-        road.setEffect(getShadowEffect(Color.GREEN));
+        road.setEffect(getShadowEffect(Color.GREEN)); //view
         currentImageView = road;
         currentPattern = new Pattern(PatternType.ROAD);
     }
@@ -478,9 +646,9 @@ public class ConstructionController {
         isGreen = true;
         checkHighlightIcons();
         checkHighLightChildren();
-        truck.setEffect(getShadowEffect(Color.GREEN));
+        truck.setEffect(getShadowEffect(Color.GREEN)); //view
         currentImageView = truck;
-        currentPattern = new Pattern(PatternType.TRUCK);
+        currentPattern = new Pattern(PatternType.TRUCK_HEAD);
     }
 
     @FXML // выбран крест удаления
@@ -490,12 +658,12 @@ public class ConstructionController {
         isGreen = false;
         checkHighlightIcons();
         checkHighLightChildren();;
-        cross.setEffect(getShadowEffect(Color.RED));
+        cross.setEffect(getShadowEffect(Color.RED)); //view
         currentImageView = emptyPattern;
         currentPattern = new Pattern(PatternType.EMPTY);
     }
 
-    //проверка наличия только одного выделенного шаблона
+    //проверка наличия только одного выделенного шаблона //view
     private void checkHighlightIcons(){
         for(ImageView elem: imageViews){
             if(elem.getEffect() instanceof InnerShadow){
@@ -504,13 +672,13 @@ public class ConstructionController {
         }
     }
 
-    //проверка наличия только одной выделенной клетки на парковке
+    //проверка наличия только одной выделенной клетки на парковке //view
     private void checkHighLightChildren(){
         ObservableList<Node> observableList = gridPane.getChildren();
         int size = observableList.size();
         for(int i = 1; i < size; i++){
             ImageView imageView = (ImageView)observableList.get(i);
-            if(imageView.getEffect() instanceof InnerShadow && imageView.getImage() != truck.getImage()){
+            if(imageView.getEffect() instanceof InnerShadow || imageView.getEffect() instanceof Bloom){
                 imageView.setEffect(new Blend());
             }
         }
@@ -524,17 +692,17 @@ public class ConstructionController {
         for(int i = 0; i < parking.getHorizontalSize(); i++){
             for(int j = 0; j < parking.getVerticalSize(); j++){
                 if(parking.getParkingCells()[i][j].getPattern().getPatternType() == PatternType.CASH){
-                    cash.setDisable(true);
-                    cash.setEffect(new Blend());
-                    if(currentPattern.getPatternType() == PatternType.CAR) {
+                    cash.setDisable(true); //view
+                    cash.setEffect(new Blend()); //view
+                    if(currentPattern.getPatternType() == PatternType.CASH) {
                         currentImageView = emptyPattern;
                         currentPattern = new Pattern(PatternType.EMPTY);
                     }
                     countCash++;
                 }
                 else if(parking.getParkingCells()[i][j].getPattern().getPatternType() == PatternType.IN){
-                    arrowIn.setDisable(true);
-                    arrowIn.setEffect(new Blend());
+                    arrowIn.setDisable(true); //view
+                    arrowIn.setEffect(new Blend()); //view
                     if(currentPattern.getPatternType() == PatternType.IN) {
                         currentImageView = emptyPattern;
                         currentPattern = new Pattern(PatternType.EMPTY);
@@ -542,8 +710,8 @@ public class ConstructionController {
                     countArrowIn++;
                 }
                 else if(parking.getParkingCells()[i][j].getPattern().getPatternType() == PatternType.OUT){
-                    arrowOut.setDisable(true);
-                    arrowOut.setEffect(new Blend());
+                    arrowOut.setDisable(true); //view
+                    arrowOut.setEffect(new Blend()); //view
                     if(currentPattern.getPatternType() == PatternType.OUT) {
                         currentImageView = emptyPattern;
                         currentPattern = new Pattern(PatternType.EMPTY);
@@ -553,17 +721,17 @@ public class ConstructionController {
             }
         }
         if(countCash == 0){
-            cash.setDisable(false);
+            cash.setDisable(false); //view
         }
         if(countArrowOut == 0){
-            arrowOut.setDisable(false);
+            arrowOut.setDisable(false); //view
         }
         if(countArrowIn == 0){
-            arrowIn.setDisable(false);
+            arrowIn.setDisable(false); //view
         }
     }
 
-    //удаление всех ячеек(перед изменением размера парковки)
+    //удаление всех ячеек(перед изменением размера парковки) //view
     private void removeAllChildren(){
         ObservableList<Node> observableList = gridPane.getChildren();
         int size = observableList.size();
@@ -583,7 +751,7 @@ public class ConstructionController {
         return true;
     }
     //блокировка спиннеров при запрете изменения
-    private void checkChangeSpinnerSize(){
+    private void checkChangeSpinnerSize(){ //view
         if(!ableChangeSize()){
             spinnerHorizontal.setDisable(true);
             spinnerVertical.setDisable(true);
@@ -621,7 +789,18 @@ public class ConstructionController {
             if(numPoint > 0 && file.getName().substring(numPoint+1).equals("park")) {
                 try (FileInputStream fileInputStream = new FileInputStream(file)) {
                     ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
-                    Parking readParking = (Parking) objectInputStream.readObject();
+                    Parking readParking = null;
+                    try {
+                        readParking = (Parking) objectInputStream.readObject();
+                    }
+                    catch (ClassNotFoundException | ClassCastException ex){
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Ошибка");
+                        alert.setHeaderText(null);
+                        alert.setContentText("Файл с топологией парковки поврежден! Открытие невозможно. ");
+                        alert.showAndWait();
+                        return;
+                    }
                     int horizontalLength = readParking.getHorizontalSize();
                     int verticalLength = readParking.getVerticalSize();
                     int difHor = Math.abs(horizontalLength - spinnerHorizontal.getValue());
@@ -655,7 +834,7 @@ public class ConstructionController {
                     checkChangeSpinnerSize();
                     checkHighlightIcons();
                     checkHighLightChildren();
-                } catch (IOException | ClassNotFoundException ex) {
+                } catch (IOException ex) {
                     ex.printStackTrace();
                 }
             }
@@ -690,7 +869,115 @@ public class ConstructionController {
     }
 
     @FXML
-    private void test(){
+    private void check(){
+        if(checkPresenceUniqueElements()&&checkPlacementUniqueElements()) {
+            Alert alertWindow = new Alert(Alert.AlertType.INFORMATION);
+            alertWindow.setTitle("Сообщение");
+            alertWindow.setHeaderText(null);
+            alertWindow.setContentText("Топология корректна!");
+            alertWindow.showAndWait();
+        }
+        else {
+            Alert alertWindow = new Alert(Alert.AlertType.ERROR);
+            alertWindow.setTitle("Ошибка");
+            alertWindow.setHeaderText(null);
+            alertWindow.setContentText("Топология некорректна!");
+            alertWindow.showAndWait();
+        }
+    }
+
+    //проверка наличия въезда, выезда, кассы
+    private boolean checkPresenceUniqueElements(){
+        int countCash = 0;
+        int countArrowIn = 0;
+        int countArrowOut = 0;
+        for(int i = 0; i < parking.getHorizontalSize(); i++){
+            for(int j = 0; j < parking.getVerticalSize(); j++){
+                ParkingCell parkingCell = parking.getParkingCells()[i][j];
+                if(parkingCell.getPattern().getPatternType() == PatternType.CASH){
+                    countCash++;
+                }
+                else if(parkingCell.getPattern().getPatternType() == PatternType.IN){
+                    countArrowIn++;
+                }
+                else if(parkingCell.getPattern().getPatternType() == PatternType.OUT){
+                    countArrowOut++;
+                }
+            }
+        }
+        return countCash != 0 && countArrowIn != 0 && countArrowOut != 0;
+    }
+
+    //проверка расположения въезда, выезда, кассы
+    private boolean checkPlacementUniqueElements(){
+        int rowIn = 0;
+        int columnIn = 0;
+        int rowOut = 0;
+        int columnOut = 0;
+        for(int i = 0; i < parking.getHorizontalSize(); i++) {
+            for (int j = 0; j < parking.getVerticalSize(); j++) {
+                ParkingCell parkingCell = parking.getParkingCells()[i][j];
+                if ((parkingCell.getPattern().getPatternType() == PatternType.IN || parkingCell.getPattern().getPatternType() == PatternType.OUT || parkingCell.getPattern().getPatternType() == PatternType.CASH)) {
+                    if (i != 0 && j != 0 && i != parking.getHorizontalSize() - 1 && j != parking.getVerticalSize() - 1) {
+                        return false;
+                    }
+                    if (parkingCell.getPattern().getPatternType() == PatternType.IN) {
+                        rowIn = parkingCell.getCoordinateHorizontal();
+                        columnIn = parkingCell.getCoordinateVertical();
+                    }
+                    else if (parkingCell.getPattern().getPatternType() == PatternType.OUT) {
+                        rowOut = parkingCell.getCoordinateHorizontal();
+                        columnOut = parkingCell.getCoordinateVertical();
+                    }
+                }
+            }
+        }
+        if(rowIn != rowOut && columnIn != columnOut){
+            return false;
+        }
+        switch (parking.getParkingCells()[rowIn][columnIn].getPattern().getRotation()){
+            case SOUTH:{
+                if(parking.getParkingCells()[rowOut][columnOut].getPattern().getRotation() != Rotation.NORTH){
+                    return false;
+                }
+                break;
+            }
+            case NORTH:{
+                if(parking.getParkingCells()[rowOut][columnOut].getPattern().getRotation() != Rotation.SOUTH){
+                    return false;
+                }
+                break;
+            }
+            case WEST:{
+                if(parking.getParkingCells()[rowOut][columnOut].getPattern().getRotation() != Rotation.EAST){
+                    return false;
+                }
+                break;
+            }
+            case EAST:{
+                if(parking.getParkingCells()[rowOut][columnOut].getPattern().getRotation() != Rotation.WEST){
+                    return false;
+                }
+                break;
+            }
+        }
+        ArrayList<PairIJ> listNearIn = getIndexNearCells(rowIn, columnIn);
+        ArrayList<PairIJ> listNearOut = getIndexNearCells(rowOut, columnOut);
+        for(PairIJ pair: listNearIn){
+            if(parking.getParkingCells()[pair.getI()][pair.getJ()].getPattern().getPatternType() == PatternType.CASH){
+                return true;
+            }
+        }
+        for(PairIJ pair: listNearOut){
+            if(parking.getParkingCells()[pair.getI()][pair.getJ()].getPattern().getPatternType() == PatternType.CASH){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @FXML
+    private void toModelling(){
 
     }
 
@@ -704,6 +991,22 @@ public class ConstructionController {
     сохранение в файл(корректного и некорректного) (КОРРЕКТНЫЙ СДЕЛАНО)
     загрузка из файла (СДЕЛАНО)
     проверка корректности
-    вращение въезда, выезда и кассы
+    вращение въезда, выезда (СДЕЛАНО)
+    исправить размер элементов в клетках
+     */
+
+    /*
+    ДЛЯ ТЕСТОВ:
+    1. Добавление шаблонов из одной клетки
+    2. Добавление уникальных шаблонов из одной клетки
+    3. Добавление грузовиков в любой конфигурации
+    4. Удаление уникальных и неуникальных шиблонов из одной клетки
+    5. Удаление грузовиков
+    6. Перемещение шаблонов из одной клетки
+    7. Перемещение грузовиков любой конфигурации
+    8. Проверка правильности конфигурации въезда, выезда
+    9. Проверка корректности топологии
+    10. Сохранение в файл
+    11. Загрузка в файл
      */
 }
