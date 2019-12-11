@@ -6,11 +6,13 @@ public class ParkingCell implements Serializable {
     private int coordinateHorizontal;
     private int coordinateVertical;
     private Pattern pattern;
+    private boolean isOccupied;
 
     public ParkingCell(int coordinateHorizontal, int coordinateVertical, Pattern pattern) {
         this.coordinateHorizontal = coordinateHorizontal;
         this.coordinateVertical = coordinateVertical;
         this.pattern = pattern;
+        this.isOccupied = false;
     }
 
     public int getCoordinateHorizontal() {
@@ -35,5 +37,13 @@ public class ParkingCell implements Serializable {
 
     public void setPattern(Pattern pattern) {
         this.pattern = pattern;
+    }
+
+    public boolean isOccupied() {
+        return isOccupied;
+    }
+
+    public void setOccupied(boolean occupied) {
+        isOccupied = occupied;
     }
 }

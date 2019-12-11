@@ -436,7 +436,7 @@ public class ModellingController {
                 stop.setDisable(false);
                 slow.setDisable(false);
                 fast.setDisable(false);
-                flowThread = new FlowThread(anchorPaneFlow, booster.getBoost(), flowParamFirst, flowParamSecond, flowType, getCoordinateXOfIn(), gridPane, getPairIJIn());
+                flowThread = new FlowThread(anchorPaneFlow, booster.getBoost(), flowParamFirst, flowParamSecond, flowType, getCoordinateXOfIn(), gridPane, getPairIJIn(), parking);
                 flowThread.setName("TransportFlowThread");
                 flowThread.setDaemon(true);
                 calendar.set(Calendar.HOUR_OF_DAY, 12);
@@ -485,6 +485,7 @@ public class ModellingController {
 
     @FXML
     private void fastClick(){
+        //int[][] matrix = getMatrixParking(new PairIJ(4, 3));
         if(booster.getCode() != 6) {
             booster = Booster.getBooster(booster.getCode() + 1);
             if(booster != null) {
