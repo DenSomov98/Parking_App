@@ -1,4 +1,6 @@
-package sample;
+package sample.utils;
+
+import sample.utils.PairIJ;
 
 import java.util.ArrayList;
 import java.util.List;

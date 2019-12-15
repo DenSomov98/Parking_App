@@ -1,16 +1,8 @@
 package sample.updaters;
 
 import javafx.scene.Node;
-import javafx.scene.effect.ColorInput;
-import javafx.scene.effect.InnerShadow;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
-import javafx.scene.paint.Color;
-import sample.PairIJ;
-
-import java.awt.*;
-import java.util.ArrayList;
+import sample.utils.PairIJ;
 
 
 public class UpdaterCarInParkingAdd implements Runnable {

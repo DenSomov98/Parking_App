@@ -6,11 +6,11 @@ import java.util.Calendar;
 import sample.updaters.*;
 
 public class TimeThread extends Thread{
-    private Calendar calendar;
-    private Label clock;
-    private boolean canWork;
+    private volatile Calendar calendar;
+    private volatile Label clock;
+    private volatile boolean canWork;
     private volatile boolean isSuspended;
-    private double booster;
+    private volatile double booster;
 
     public TimeThread(Calendar calendar, Label clock, double booster){
         this.calendar = calendar;
@@ -22,6 +22,7 @@ public class TimeThread extends Thread{
     @Override
     public void run() {
         while (canWork) {
+            calendar.add(Calendar.SECOND, 1);
             Platform.runLater(new UpdaterTime(calendar, clock));
             try {
                 sleep((long) (1000 / booster));
@@ -35,7 +36,6 @@ public class TimeThread extends Thread{
             } catch (InterruptedException ignored) {
 
             }
-            calendar.add(Calendar.SECOND, 1);
         }
     }
     @Override

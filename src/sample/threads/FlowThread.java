@@ -2,72 +2,85 @@ package sample.threads;
 
 import javafx.application.Platform;
 import javafx.scene.Node;
+import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
-import sample.PairIJ;
-import sample.enums.LawType;
+import sample.utils.LawDistribution;
 import sample.models.Parking;
 import sample.updaters.*;
 
+import java.util.Calendar;
 import java.util.Random;
 
 public class FlowThread extends Thread {
     private AnchorPane anchorPane;
     private GridPane gridPane;
-    private double booster;
-    private boolean canWork;
+    private Label countNoFreePlaces;
+    private Label clock;
+    private volatile Parking parking;
+    private LawDistribution flowLawDistribution;
+    private LawDistribution stayLawDistribution;
+    private double probabilityCar;
+    private double probabilityIn;
+    private volatile double booster;
+    private volatile boolean canWork;
     private volatile boolean isSuspended;
-    private int paramFirst;
-    private int paramSecond;
-    private LawType lawType;
-    private int coordinateXIn;
-    private PairIJ indexIn;
-    private Parking parking;
+    private volatile Calendar calendar;
 
-    public FlowThread(AnchorPane anchorPane, double booster, int paramFirst, int paramSecond, LawType lawType, int coordinateXIn, GridPane gridPane, PairIJ indexIn, Parking parking){
+
+    public FlowThread(AnchorPane anchorPane, GridPane gridPane, Label countNoFreePlaces, Parking parking, double booster, Calendar calendar, Label clock, LawDistribution flowLawDistribution, LawDistribution stayLawDistribution, double probabilityCar, double probabilityIn){
         this.anchorPane = anchorPane;
+        this.gridPane = gridPane;
+        this.countNoFreePlaces = countNoFreePlaces;
+        this.parking = parking;
+        this.flowLawDistribution = flowLawDistribution;
+        this.stayLawDistribution = stayLawDistribution;
+        this.probabilityCar = probabilityCar;
+        this.probabilityIn = probabilityIn;
         this.booster = booster;
         isSuspended = false;
         canWork = true;
-        this.paramFirst = paramFirst;
-        this.paramSecond = paramSecond;
-        this.lawType = lawType;
-        this.coordinateXIn = coordinateXIn;
-        this.gridPane = gridPane;
-        this.indexIn = indexIn;
-        this.parking = parking;
+        this.calendar = calendar;
+        this.clock = clock;
     }
 
     @Override
     public void run() {
         int number = 1;
         while (canWork){
-            Platform.runLater(new UpdaterFlow(number, anchorPane));
-            CarThread carThread = new CarThread(anchorPane, number, booster, coordinateXIn, gridPane, indexIn, parking);
+            Platform.runLater(new UpdaterFlow(number, anchorPane, probabilityCar));
+            CarThread carThread = new CarThread(anchorPane, number, gridPane, countNoFreePlaces, parking, booster, calendar, clock, stayLawDistribution, probabilityIn);
             carThread.setName("CarThread" + number);
             carThread.start();
             try {
                 int time = 0;
-                switch (lawType){
+                switch (flowLawDistribution.getLawType()){
                     case UNIFORM:{
-                        time = getTimeUniform(paramFirst, paramSecond);
+                        time = getTimeUniform(flowLawDistribution.getParameterOne(), flowLawDistribution.getParameterTwo());
                         break;
                     }
                     case NORMAL:{
-                        time = getTimeNormal(paramFirst, paramSecond);
+                        time = getTimeNormal(flowLawDistribution.getParameterOne(), flowLawDistribution.getParameterTwo());
                         break;
                     }
                     case EXPONENTIAL:{
-                        time = getTimeExponential(paramFirst);
+                        time = getTimeExponential(flowLawDistribution.getParameterOne());
                         break;
                     }
                     case DETERMINE:{
-                        time = paramFirst;
+                        time = flowLawDistribution.getParameterOne();
                         break;
                     }
                 }
-                sleep((long)(time * 1000/booster));
+                if (isSuspended) {
+                    synchronized (this) {
+                        while (isSuspended) {
+                            wait();
+                        }
+                    }
+                }
+                sleep((long)(time * 1000/booster)); // интервал между появлением автомобиля в секундах
                 if(isSuspended){
                     synchronized (this){
                         while (isSuspended){

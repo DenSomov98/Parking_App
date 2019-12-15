@@ -16,7 +16,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import sample.PairIJ;
+import sample.utils.PairIJ;
 import sample.enums.PatternType;
 import sample.enums.Rotation;
 import sample.models.Parking;

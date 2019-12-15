@@ -2,7 +2,6 @@ package sample.updaters;
 
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
-import sample.PairIJ;
 
 
 public class UpdaterCarParkingRemove implements Runnable {

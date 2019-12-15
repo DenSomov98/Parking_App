@@ -1,20 +1,15 @@
 package sample.controllers;
 
-import javafx.application.Platform;
 import javafx.collections.ObservableList;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
-import javafx.scene.effect.Blend;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.ColorInput;
-import javafx.scene.effect.GaussianBlur;
 import javafx.scene.image.Image;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
@@ -24,20 +19,17 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.scene.image.ImageView;
 
-import java.awt.event.MouseAdapter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Map;
-import java.util.Random;
 
 import javafx.scene.control.Label;
-import jdk.internal.util.xml.impl.Pair;
-import sample.PairIJ;
+import sample.utils.LawDistribution;
 import sample.models.Parking;
 import sample.models.ParkingCell;
 import sample.threads.*;
@@ -71,8 +63,8 @@ public class ModellingController {
     @FXML
     private AnchorPane anchorPaneFlow;
 
-    private Calendar calendar;
-    private Booster booster;
+    private volatile Calendar calendar;
+    private volatile Booster booster;
 
     private FlowThread flowThread;
     private TimeThread timeThread;
@@ -82,13 +74,12 @@ public class ModellingController {
     private boolean isLoaded;
     private static boolean isParameterized;
 
-    private LawType flowType;
-    private int flowParamFirst;
-    private int flowParamSecond;
+    private LawDistribution flowLawDistribution;
+    private LawDistribution stayLawDistribution;
 
-    private LawType stayType;
-    private int stayParamFirst;
-    private int stayParamSecond;
+    private double probabilityCar;
+    private double probabilityIn;
+
 
     public void initialize(){
         parking = new Parking(5, 5);
@@ -101,9 +92,10 @@ public class ModellingController {
         booster = Booster.BOOSTER_DEFAULT;
         drawParkingInit();
         //addAnchorFlowClickEvent();
-        flowType = LawType.UNIFORM;
-        flowParamFirst = 1;
-        flowParamSecond = 5;
+        flowLawDistribution = new LawDistribution(LawType.UNIFORM, 2, 5);
+        stayLawDistribution = new LawDistribution(LawType.DETERMINE, 1, LawDistribution.NO_PARAMETER);
+        probabilityCar = 1.0;
+        probabilityIn = 0.3;
     }
 
     public static Stage getStage() {
@@ -161,77 +153,6 @@ public class ModellingController {
 
     @FXML
     private void loadFile(){
-        /*FileChooser fileChooser = new FileChooser();
-        fileChooser.setInitialDirectory(new File("D://Денис/Desktop/parkings"));
-        File file = fileChooser.showOpenDialog(new Stage());
-        if(file != null){
-            int numPoint = file.getName().lastIndexOf('.');
-            if( numPoint > 0 && file.getName().substring(numPoint+1).equals("park")) {
-                try (FileInputStream fileInputStream = new FileInputStream(file)) {
-                    ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
-                    maskParking = (int[][]) objectInputStream.readObject();
-                    int lengthHorizontal = maskParking.length;
-                    int lengthVertical = maskParking[0].length;
-                    removeAllChildren();
-                    changeGrid(lengthHorizontal, lengthVertical);
-                    drawGrid(lengthHorizontal, lengthVertical);
-                    int number = 1;
-                    for (int[] viewMatrix : maskParking) {
-                        for (int matrix : viewMatrix) {
-                            ImageView imageView = (ImageView) gridPane.getChildren().get(number);
-                            switch (matrix) {
-                                case 1: {
-                                    imageView.setImage(new Image(getClass().getResourceAsStream("../images/car.JPG")));
-                                    imageView.setEffect(new Blend());
-                                    break;
-                                }
-                                case 2: {
-                                    imageView.setImage(new Image(getClass().getResourceAsStream("../images/arrowin.JPG")));
-                                    imageView.setEffect(new Blend());
-                                    break;
-                                }
-                                case 3: {
-                                    imageView.setImage(new Image(getClass().getResourceAsStream("../images/arrowout.JPG")));
-                                    imageView.setEffect(new Blend());
-                                    break;
-                                }
-                                case 4: {
-                                    imageView.setImage(new Image(getClass().getResourceAsStream("../images/cash.JPG")));
-                                    imageView.setEffect(new Blend());
-                                    break;
-                                }
-                                case 5: {
-                                    imageView.setImage(new Image(getClass().getResourceAsStream("../images/road.JPG")));
-                                    imageView.setEffect(new Blend());
-                                    break;
-                                }
-                                case 6: {
-                                    imageView.setImage(new Image(getClass().getResourceAsStream("../images/truck.JPG")));
-                                    imageView.setEffect(new Blend());
-                                    break;
-                                }
-                            }
-                            if (matrix != 0) {
-                                imageView.setEffect(new GaussianBlur(4));
-                            }
-                            number++;
-                        }
-                    }
-                    isLoaded = true;
-                    play.setDisable(false);
-                }
-                catch (IOException | ClassNotFoundException ex) {
-                    ex.printStackTrace();
-                }
-            }
-            else {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setTitle("Ошибка");
-                alert.setHeaderText(null);
-                alert.setContentText("Ошибка при загрузке файла!");
-                alert.showAndWait();
-            }
-        }*/
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialDirectory(new File("src/parkings"));
         File file = fileChooser.showOpenDialog(new Stage());
@@ -283,6 +204,7 @@ public class ModellingController {
                     updateParking();
                     isLoaded = true;
                     play.setDisable(false);
+                    countPlaces.setText(String.valueOf(getCountPlaces()));
                 }
                 catch (IOException ex) {
                     ex.printStackTrace();
@@ -418,8 +340,9 @@ public class ModellingController {
             }
         }
         else {
-            if(isStopped){
+            /*if(isStopped){
                 isStopped = false;
+                isLoaded = true;
                 timeThread.setCanWork(true);
                 flowThread.setCanWork(true);
                 Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
@@ -429,14 +352,14 @@ public class ModellingController {
                         carThread.setCanWork(true);
                     }
                 }
-            }
+            }*/
             if(isLoaded) {
                 play.setDisable(true);
                 pause.setDisable(false);
                 stop.setDisable(false);
                 slow.setDisable(false);
                 fast.setDisable(false);
-                flowThread = new FlowThread(anchorPaneFlow, booster.getBoost(), flowParamFirst, flowParamSecond, flowType, getCoordinateXOfIn(), gridPane, getPairIJIn(), parking);
+                flowThread = new FlowThread(anchorPaneFlow, gridPane, countNoFreePlaces, parking, booster.getBoost(), calendar, clock, flowLawDistribution, stayLawDistribution, probabilityCar, probabilityIn);
                 flowThread.setName("TransportFlowThread");
                 flowThread.setDaemon(true);
                 calendar.set(Calendar.HOUR_OF_DAY, 12);
@@ -454,10 +377,21 @@ public class ModellingController {
     @FXML
     private void stopClick(){
         isStopped = true;
+        isLoaded = true;
+        fast.setDisable(true);
+        slow.setDisable(true);
+        pause.setDisable(true);
+        play.setDisable(false);
+        countNoFreePlaces.setText("0");
         Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
         for (Thread thread : threads.keySet()) {
-            if(thread.getName().equals("TimeThread") || thread.getName().equals("TransportFlowThread") || thread.getName().contains("CarThread")) {
+            if(thread.getName().equals("TimeThread") || thread.getName().equals("TransportFlowThread")) {
                 thread.interrupt();
+            }
+            else if(thread.getName().contains("CarThread")){
+                CarThread carThread = (CarThread)thread;
+                carThread.finish();
+                updateParking();
             }
         }
     }
@@ -478,16 +412,16 @@ public class ModellingController {
             }
             else if(thread.getName().contains("CarThread")){
                 CarThread carThread = (CarThread)thread;
-                carThread.pauseThread();
+                carThread.interrupt();
             }
         }
     }
 
     @FXML
     private void fastClick(){
-        //int[][] matrix = getMatrixParking(new PairIJ(4, 3));
         if(booster.getCode() != 6) {
             booster = Booster.getBooster(booster.getCode() + 1);
+            System.out.println(clock.getText() + " Ускорение в " + booster.getBoost() + " раз");
             if(booster != null) {
                 boostThreads(booster.getBoost());
             }
@@ -498,6 +432,7 @@ public class ModellingController {
     private void slowClick(){
         if(booster.getCode() != -6) {
             booster = Booster.getBooster(booster.getCode() - 1);
+            System.out.println(clock.getText() + " Ускорение в " + booster.getBoost() + " раз");
             if(booster != null) {
                 boostThreads(booster.getBoost());
             }
@@ -509,17 +444,17 @@ public class ModellingController {
         flowThread.pauseThread();
         timeThread.setBooster(booster);
         flowThread.setBooster(booster);
-        timeThread.resumeThread();
-        flowThread.resumeThread();
         Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
         for (Thread thread : threads.keySet()) {
             if(thread.getName().contains("CarThread")){
                 CarThread carThread = (CarThread)thread;
-                carThread.pauseThread();
                 carThread.setBooster(booster);
+                carThread.interrupt();
                 carThread.resumeThread();
             }
         }
+        timeThread.resumeThread();
+        flowThread.resumeThread();
     }
 
     private ColorInput getWhiteColorEffect(double height, double width){
@@ -539,51 +474,16 @@ public class ModellingController {
         return colorAdjust;
     }
 
-    private int getCoordinateXOfIn(){
+    private int getCountPlaces(){
+        int counter = 0;
         for(int i = 0; i < parking.getHorizontalSize(); i++){
             for(int j = 0; j < parking.getVerticalSize(); j++){
-                if(parking.getParkingCells()[i][j].getPattern().getPatternType() == PatternType.IN){
-                    int index = coordinatesToIndex(i, j);
-                    return (int)gridPane.getChildren().get(index).getBoundsInParent().getMaxX();
+                if(parking.getParkingCells()[i][j].getPattern().getPatternType() == PatternType.CAR || parking.getParkingCells()[i][j].getPattern().getPatternType() == PatternType.TRUCK_HEAD){
+                    counter++;
                 }
             }
         }
-        return -1;
-        /*for(int i = 0; i < maskParking.length; i++) {
-            for (int j = 0; j < maskParking[0].length; j++) {
-                if (maskParking[i][j] == 2) {
-                    int index = (i * maskParking[0].length) + j + 1;
-                    return (int) gridPane.getChildren().get(index).getBoundsInParent().getMaxX();
-                }
-            }
-        }
-        return -1;*/
-    }
-
-    private int coordinatesToIndex(int i, int j){
-        return (i * parking.getVerticalSize() + j + 1);
-    }
-
-    private PairIJ getPairIJIn(){
-        for(int i = 0; i < parking.getHorizontalSize(); i++){
-            for(int j = 0; j < parking.getVerticalSize(); j++){
-                if(parking.getParkingCells()[i][j].getPattern().getPatternType() == PatternType.IN){
-                    return new PairIJ(i, j);
-                }
-            }
-        }
-        return null;
-    }
-
-
-    private void addAnchorFlowClickEvent(){
-        gridPane.setOnMouseClicked(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent event) {
-                countNoFreePlaces.setText(String.valueOf(event.getX()));
-                countPlaces.setText(String.valueOf(event.getY()));
-            }
-        });
+        return counter;
     }
 }
     /*

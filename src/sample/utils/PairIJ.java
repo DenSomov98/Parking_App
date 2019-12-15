@@ -1,4 +1,4 @@
-package sample;
+package sample.utils;
 
 public class PairIJ {
     private int i;
