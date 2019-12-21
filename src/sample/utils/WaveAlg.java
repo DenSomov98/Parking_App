@@ -29,7 +29,7 @@ public class WaveAlg {
 
     public void findPath(int x, int y, int nx, int ny) {
         if (map[y][x] == wall || map[ny][nx] == wall) {
-            System.out.println("Вы выбрали препятствие");
+            //System.out.println("Вы выбрали препятствие");
             return;
         }
 
@@ -80,7 +80,7 @@ public class WaveAlg {
                 }
             }
             if (flag) {
-                System.out.println("Пути нет");
+                //System.out.println("Пути нет");
                 break;
             }
         }
@@ -105,7 +105,7 @@ public class WaveAlg {
         System.out.print("   ");
         for (int i = 0; i < height; i++) // вывод верхней нумерации
         {
-            System.out.print(i > 9 ? i + " " : i + "  ");
+            //System.out.print(i > 9 ? i + " " : i + "  ");
         }
         System.out.println();
         for (int i = 0; i < width; i++) {
@@ -113,7 +113,7 @@ public class WaveAlg {
             for (int j = 0; j < height; j++) {
                 m += map[i][j] > 9 || map[i][j] < 0 ? map[i][j] + " " : map[i][j] + "  ";
             }
-            System.out.println(m);
+            //System.out.println(m);
         }
     }
 

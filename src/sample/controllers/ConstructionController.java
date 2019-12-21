@@ -1,12 +1,18 @@
 package sample.controllers;
 
+import com.sun.deploy.uitoolkit.impl.fx.HostServicesFactory;
+import com.sun.javafx.application.HostServicesDelegate;
+import com.sun.jndi.toolkit.url.Uri;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.effect.*;
 import javafx.scene.image.*;
@@ -14,16 +20,23 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import jdk.internal.util.xml.impl.Pair;
 import sample.utils.PairIJ;
 import sample.enums.PatternType;
 import sample.enums.Rotation;
 import sample.models.Parking;
 import sample.models.ParkingCell;
 import sample.models.Pattern;
+import sample.utils.WaveAlg;
 
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 
 public class ConstructionController {
@@ -764,18 +777,27 @@ public class ConstructionController {
 
     @FXML
     private void saveFile() {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setInitialDirectory(new File("src/parkings"));
-        File file = fileChooser.showSaveDialog(new Stage());
-        if (file != null) {
-            String path = file.getPath();
-            path += ".park";
-            try (FileOutputStream fileOutputStream = new FileOutputStream(path)) {
-                ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
-                objectOutputStream.writeObject(parking);
-            } catch (IOException ex) {
-                ex.printStackTrace();
+        if(checkPresenceUniqueElements()&&checkPlacementUniqueElements()&&checkRoads()) {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setInitialDirectory(new File("src/parkings"));
+            File file = fileChooser.showSaveDialog(new Stage());
+            if (file != null) {
+                String path = file.getPath();
+                path += ".park";
+                try (FileOutputStream fileOutputStream = new FileOutputStream(path)) {
+                    ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
+                    objectOutputStream.writeObject(parking);
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
             }
+        }
+        else {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText(null);
+            alert.setContentText("Топология некорректна. Сохранение невозможно.");
+            alert.showAndWait();
         }
     }
 
@@ -870,7 +892,10 @@ public class ConstructionController {
 
     @FXML
     private void check(){
-        if(checkPresenceUniqueElements()&&checkPlacementUniqueElements()) {
+        boolean conditionOne = checkPresenceUniqueElements();
+        boolean conditionTwo = checkPlacementUniqueElements();
+        boolean conditionThree = checkRoads();
+        if(conditionOne&&conditionTwo&&conditionThree) {
             Alert alertWindow = new Alert(Alert.AlertType.INFORMATION);
             alertWindow.setTitle("Сообщение");
             alertWindow.setHeaderText(null);
@@ -881,7 +906,17 @@ public class ConstructionController {
             Alert alertWindow = new Alert(Alert.AlertType.ERROR);
             alertWindow.setTitle("Ошибка");
             alertWindow.setHeaderText(null);
-            alertWindow.setContentText("Топология некорректна!");
+            String message = "Топология не корректна! \n";
+            if(!conditionOne) {
+                message += "Въезд, выезд и/или касса не установлены! \n";
+            }
+            if(conditionOne&&!conditionTwo) {
+                message += "Въезд, выезд или касса установлены неправильно. Установите их на граничных клетках парковки! Касса должна примыкать к въезду или выезду \n\n";
+            }
+            if(conditionOne&&!conditionThree) {
+                message += "На парковке нет парковочных мест ИЛИ \nСуществуют места на парковке не соединенные дорогами с въездом/выездом! \n";
+            }
+            alertWindow.setContentText(message);
             alertWindow.showAndWait();
         }
     }
@@ -976,9 +1011,108 @@ public class ConstructionController {
         return false;
     }
 
-    @FXML
-    private void toModelling(){
+    private boolean checkRoads(){
+        int rowIn = 0;
+        int columnIn = 0;
+        int rowOut = 0;
+        int columnOut = 0;
+        int countPlacesStay = 0;
+        for(int i = 0; i < parking.getHorizontalSize(); i++) {
+            for (int j = 0; j < parking.getVerticalSize(); j++) {
+                ParkingCell parkingCell = parking.getParkingCells()[i][j];
+                if(parkingCell.getPattern().getPatternType() == PatternType.IN){
+                    rowIn = i;
+                    columnIn = j;
+                }
+                else if(parkingCell.getPattern().getPatternType() == PatternType.OUT){
+                    rowOut = i;
+                    columnOut = j;
+                }
+            }
+        }
+        for(int i = 0; i < parking.getHorizontalSize(); i++) {
+            for (int j = 0; j < parking.getVerticalSize(); j++) {
+                ParkingCell parkingCell = parking.getParkingCells()[i][j];
+                if(parkingCell.getPattern().getPatternType() == PatternType.CAR || parkingCell.getPattern().getPatternType() == PatternType.TRUCK_HEAD){
+                    countPlacesStay++;
+                    WaveAlg path1 = new WaveAlg(getMatrixParking(new PairIJ(rowIn, columnIn), new PairIJ(i, j)));
+                    path1.findPath(columnIn + 1, rowIn + 1,j+1, i+1);
+                    if(path1.getWave().size() == 1){
+                        return false;
+                    }
+                    WaveAlg path2 = new WaveAlg(getMatrixParking(new PairIJ(rowOut, columnOut), new PairIJ(i, j)));
+                    path2.findPath(j + 1, i + 1,columnOut+1, rowOut+1);
+                    if(path2.getWave().size() == 1){
+                        return false;
+                    }
+                }
+            }
+        }
+        return countPlacesStay != 0;
+    }
 
+    private int[][] getMatrixParking(PairIJ pairOne, PairIJ pairTwo){
+        int[][] matrix = new int[parking.getHorizontalSize()+2][parking.getVerticalSize() + 2];
+        for (int i = 0; i < matrix.length; i++) {
+            matrix[i][0] = 99;
+            matrix[matrix.length - 1][i] = 99;
+        }
+        for (int i = 0; i < matrix[0].length; i++) {
+            matrix[0][i] = 99;
+            matrix[i][matrix[0].length - 1] = 99;
+        }
+        for(int i = 0; i < parking.getHorizontalSize(); i++){
+            for(int j = 0; j < parking.getVerticalSize(); j++){
+                ParkingCell parkingCell = parking.getParkingCells()[i][j];
+                if(parkingCell.getPattern().getPatternType() == PatternType.ROAD){
+                    matrix[i+1][j+1] = -1;
+                }
+                else if(i == pairTwo.getI() && j == pairTwo.getJ()){
+                    matrix[i+1][j+1] = -1;
+                }
+                else if(i == pairOne.getI() && j == pairOne.getJ()){
+                    matrix[i+1][j+1] = -1;
+                }
+                else {
+                    matrix[i+1][j+1] = 99;
+                }
+            }
+        }
+        return matrix;
+    }
+
+    @FXML
+    private void toModelling() throws IOException{
+        if(checkPresenceUniqueElements()&&checkPlacementUniqueElements()&&checkRoads()) {
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("../fxmls/modelling.fxml"));
+            fxmlLoader.setControllerFactory(c -> new ModellingController(parking));
+            Parent modellingWindow = fxmlLoader.load();
+            stage.setTitle("Моделирование");
+            stage.setScene(new Scene(modellingWindow, 600, 400));
+            stage.show();
+        }
+        else {
+            Alert alertWindow = new Alert(Alert.AlertType.ERROR);
+            alertWindow.setTitle("Ошибка");
+            alertWindow.setHeaderText(null);
+            alertWindow.setContentText("Топология некорректна. Переход в режим моделирования невозможен");
+            alertWindow.showAndWait();
+        }
+    }
+
+    @FXML
+    private void infoSystem() throws URISyntaxException, IOException {
+        URI uri = new URI("http://localhost:63342/Parking_App/ParkingApp/sample/web/infoSystem.html?_ijt=9b9p3l11qvg3qmuumq818hopi8");
+        java.awt.Desktop.getDesktop().browse(uri);
+    }
+
+    @FXML
+    private void infoCreators() throws IOException{
+        Parent helpWindow = FXMLLoader.load(getClass().getResource("../fxmls/infocreators.fxml"));
+        Stage helpStage = new Stage();
+        helpStage.setTitle("О разработчиках");
+        helpStage.setScene(new Scene(helpWindow, 600, 345));
+        helpStage.showAndWait();
     }
 
     /*

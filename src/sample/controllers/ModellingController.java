@@ -80,9 +80,14 @@ public class ModellingController {
     private double probabilityCar;
     private double probabilityIn;
 
+    public ModellingController(Parking parking){
+        this.parking = parking;
+    }
 
+    public ModellingController(){
+        this.parking = null;
+    }
     public void initialize(){
-        parking = new Parking(5, 5);
         play.setDisable(true);
         pause.setDisable(true);
         stop.setDisable(true);
@@ -90,20 +95,57 @@ public class ModellingController {
         fast.setDisable(true);
         calendar = new GregorianCalendar();
         booster = Booster.BOOSTER_DEFAULT;
-        drawParkingInit();
-        //addAnchorFlowClickEvent();
         flowLawDistribution = new LawDistribution(LawType.UNIFORM, 2, 5);
         stayLawDistribution = new LawDistribution(LawType.DETERMINE, 1, LawDistribution.NO_PARAMETER);
         probabilityCar = 1.0;
         probabilityIn = 0.3;
+        if(parking == null) {
+            parking = new Parking(5, 5);
+            drawParkingInit();
+        }
+        else {
+            Parking tempParking = parking;
+            int difHor = Math.abs(5 - parking.getHorizontalSize());
+            int difVer = Math.abs(5 - parking.getVerticalSize());
+            if (5 < parking.getHorizontalSize()) {
+                for (int i = 0; i < difHor; i++) {
+                    //parking.setHorizontalSize(parking.getHorizontalSize() - 1);
+                    changeHorizontalSize();
+                }
+            }
+            if (5 > parking.getHorizontalSize()) {
+                for (int i = 0; i < difHor; i++) {
+                    //parking.setHorizontalSize(parking.getHorizontalSize() + 1);
+                    changeHorizontalSize();
+                }
+            }
+            if (5 < parking.getVerticalSize()) {
+                for (int i = 0; i < difVer; i++) {
+                    //parking.setVerticalSize(parking.getVerticalSize() - 1);
+                    changeVerticalSize();
+                }
+            }
+            if (5 > parking.getVerticalSize()) {
+                for (int i = 0; i < difVer; i++) {
+                    //parking.setVerticalSize(parking.getVerticalSize() + 1);
+                    changeVerticalSize();
+                }
+            }
+            parking = tempParking;
+            updateParking();
+        }
     }
 
     public static Stage getStage() {
         return stage;
     }
 
-    public static void setStage(Stage stage) {
-        ModellingController.stage = stage;
+    public Parking getParking() {
+        return parking;
+    }
+
+    public void setParking(Parking parking) {
+        this.parking = parking;
     }
 
     private void drawParkingInit(){
@@ -125,8 +167,8 @@ public class ModellingController {
     private void drawParking(){
         removeAllChildren();
         parking = new Parking(parking.getHorizontalSize(), parking.getVerticalSize());
-        double height = gridPane.getHeight();
-        double width = gridPane.getWidth();
+        double height = 316;
+        double width = 303;
         int max = Math.max(parking.getHorizontalSize(), parking.getVerticalSize());
         for(int i = 0; i < parking.getHorizontalSize(); i++){
             for(int j = 0; j < parking.getVerticalSize(); j++){
@@ -134,7 +176,7 @@ public class ModellingController {
                 imageView.setFitWidth(width/(max + 2));
                 imageView.setFitHeight(height/(max + 2));
                 imageView.setPreserveRatio(true);
-                imageView.setEffect(getWhiteColorEffect(height/(max + 2), width/(max + 2)));
+               // imageView.setEffect(getWhiteColorEffect(height/(max + 2), width/(max + 2)));
                 GridPane.setHalignment(imageView, HPos.CENTER);
                 GridPane.setValignment(imageView, VPos.CENTER);
                 GridPane.setMargin(imageView, new Insets(10));
@@ -164,7 +206,7 @@ public class ModellingController {
                     Parking readParking = null;
                     try {
                         readParking = (Parking) objectInputStream.readObject();
-                    } catch (ClassNotFoundException | ClassCastException ex) {
+                    } catch (Exception ex) {
                         Alert alert = new Alert(Alert.AlertType.ERROR);
                         alert.setTitle("Ошибка");
                         alert.setHeaderText(null);
@@ -241,8 +283,8 @@ public class ModellingController {
 
     private void updateParking(){
         removeAllChildren();
-        double height = gridPane.getHeight();
-        double width = gridPane.getWidth();
+        double height = 316;
+        double width = 303;
         int max = Math.max(parking.getHorizontalSize(), parking.getVerticalSize());
         for(int i = 0; i < parking.getHorizontalSize(); i++){
             for(int j = 0; j < parking.getVerticalSize(); j++){
