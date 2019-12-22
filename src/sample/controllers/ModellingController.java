@@ -2,10 +2,13 @@ package sample.controllers;
 
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.ColorInput;
@@ -23,6 +26,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -37,7 +42,7 @@ import sample.enums.*;
 
 public class ModellingController {
     private static Stage stage;
-    private Parking parking;
+    private static Parking parking;
     @FXML
     private ImageView play;
     @FXML
@@ -55,16 +60,16 @@ public class ModellingController {
     @FXML
     private Label countPlaces;
     @FXML
-    private Label profitDay;
+    private Label profit;
     @FXML
-    private Label averagePlacesDay;
+    private Label averagePlaces;
     @FXML
     private GridPane gridPane;
     @FXML
     private AnchorPane anchorPaneFlow;
 
-    private volatile Calendar calendar;
-    private volatile Booster booster;
+    private static volatile Calendar calendar;
+    private static volatile Booster booster;
 
     private FlowThread flowThread;
     private TimeThread timeThread;
@@ -74,19 +79,57 @@ public class ModellingController {
     private boolean isLoaded;
     private static boolean isParameterized;
 
-    private LawDistribution flowLawDistribution;
-    private LawDistribution stayLawDistribution;
+    private static LawDistribution flowLawDistribution;
+    private static LawDistribution stayLawDistribution;
+    private static int[] tariffs;
+    private static int cashBox;
 
-    private double probabilityCar;
-    private double probabilityIn;
+    private static double probabilityCar;
+    private static double probabilityIn;
 
     public ModellingController(Parking parking){
-        this.parking = parking;
+        ModellingController.parking = parking;
     }
 
     public ModellingController(){
-        this.parking = null;
+        parking = null;
     }
+
+    public static Calendar getCalendar() {
+        return calendar;
+    }
+
+
+    public static Booster getBooster() {
+        return booster;
+    }
+
+
+    public static LawDistribution getFlowLawDistribution() {
+        return flowLawDistribution;
+    }
+
+
+    public static LawDistribution getStayLawDistribution() {
+        return stayLawDistribution;
+    }
+
+
+    public static int[] getTariffs() {
+        return tariffs;
+    }
+
+
+    public static double getProbabilityCar() {
+        return probabilityCar;
+    }
+
+
+    public static double getProbabilityIn() {
+        return probabilityIn;
+    }
+
+
     public void initialize(){
         play.setDisable(true);
         pause.setDisable(true);
@@ -95,10 +138,12 @@ public class ModellingController {
         fast.setDisable(true);
         calendar = new GregorianCalendar();
         booster = Booster.BOOSTER_DEFAULT;
-        flowLawDistribution = new LawDistribution(LawType.UNIFORM, 2, 5);
+        flowLawDistribution = new LawDistribution(LawType.UNIFORM, 2, 6);
         stayLawDistribution = new LawDistribution(LawType.DETERMINE, 1, LawDistribution.NO_PARAMETER);
-        probabilityCar = 1.0;
-        probabilityIn = 0.3;
+        tariffs = new int[] {30, 40, 40, 50};
+        probabilityCar = 0.5;
+        probabilityIn = 0.5;
+        cashBox = 0;
         if(parking == null) {
             parking = new Parking(5, 5);
             drawParkingInit();
@@ -109,29 +154,27 @@ public class ModellingController {
             int difVer = Math.abs(5 - parking.getVerticalSize());
             if (5 < parking.getHorizontalSize()) {
                 for (int i = 0; i < difHor; i++) {
-                    //parking.setHorizontalSize(parking.getHorizontalSize() - 1);
                     changeHorizontalSize();
                 }
             }
             if (5 > parking.getHorizontalSize()) {
                 for (int i = 0; i < difHor; i++) {
-                    //parking.setHorizontalSize(parking.getHorizontalSize() + 1);
                     changeHorizontalSize();
                 }
             }
             if (5 < parking.getVerticalSize()) {
                 for (int i = 0; i < difVer; i++) {
-                    //parking.setVerticalSize(parking.getVerticalSize() - 1);
                     changeVerticalSize();
                 }
             }
             if (5 > parking.getVerticalSize()) {
                 for (int i = 0; i < difVer; i++) {
-                    //parking.setVerticalSize(parking.getVerticalSize() + 1);
                     changeVerticalSize();
                 }
             }
             parking = tempParking;
+            isLoaded = true;
+            play.setDisable(false);
             updateParking();
         }
     }
@@ -140,12 +183,198 @@ public class ModellingController {
         return stage;
     }
 
-    public Parking getParking() {
+    public static Parking getParking() {
         return parking;
     }
 
-    public void setParking(Parking parking) {
-        this.parking = parking;
+    public static void setParking(Parking parking) {
+        ModellingController.parking = parking;
+    }
+
+    public static int getCashBox() {
+        return cashBox;
+    }
+
+    public static void setCashBox(int cashBox) {
+        ModellingController.cashBox = cashBox;
+    }
+
+    @FXML
+    private void playClick(){
+        if(isPaused){
+            isPaused = false;
+            timeThread.resumeThread();
+            flowThread.resumeThread();
+            Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
+            for (Thread thread : threads.keySet()) {
+                if(thread.getName().contains("CarThread")){
+                    CarThread carThread = (CarThread)thread;
+                    carThread.resumeThread();
+                }
+            }
+        }
+        else {
+            /*if(isStopped){
+                isStopped = false;
+                isLoaded = true;
+                timeThread.setCanWork(true);
+                flowThread.setCanWork(true);
+                Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
+                for (Thread thread : threads.keySet()) {
+                    if(thread.getName().contains("CarThread")){
+                        CarThread carThread = (CarThread)thread;
+                        carThread.setCanWork(true);
+                    }
+                }
+            }*/
+            if(isLoaded) {
+                play.setDisable(true);
+                pause.setDisable(false);
+                stop.setDisable(false);
+                slow.setDisable(false);
+                fast.setDisable(false);
+                flowThread = new FlowThread(anchorPaneFlow, gridPane, countNoFreePlaces, clock);
+                flowThread.setName("TransportFlowThread");
+                flowThread.setDaemon(true);
+                calendar.set(Calendar.HOUR_OF_DAY, 12);
+                calendar.set(Calendar.MINUTE, 0);
+                calendar.set(Calendar.SECOND, 0);
+                timeThread = new TimeThread(clock);
+                timeThread.setName("TimeThread");
+                timeThread.setDaemon(true);
+                flowThread.start();
+                timeThread.start();
+            }
+        }
+    }
+
+    @FXML
+    private void stopClick(){
+        isStopped = true;
+        isLoaded = true;
+        fast.setDisable(true);
+        slow.setDisable(true);
+        pause.setDisable(true);
+        play.setDisable(false);
+        profit.setText(String.valueOf(cashBox));
+        countNoFreePlaces.setText("0");
+        Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
+        for (Thread thread : threads.keySet()) {
+            if(thread.getName().equals("TimeThread") || thread.getName().equals("TransportFlowThread")) {
+                thread.interrupt();
+            }
+            else if(thread.getName().contains("CarThread")){
+                CarThread carThread = (CarThread)thread;
+                carThread.finish();
+                updateParking();
+            }
+        }
+    }
+
+    @FXML
+    private void pauseClick(){
+        isPaused = true;
+        play.setDisable(false);
+        Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
+        for (Thread thread : threads.keySet()) {
+            if(thread.getName().equals("TimeThread")){
+                TimeThread timeThread = (TimeThread)thread;
+                timeThread.pauseThread();
+            }
+            else if(thread.getName().equals("TransportFlowThread")){
+                FlowThread flowThread = (FlowThread)thread;
+                flowThread.pauseThread();
+            }
+            else if(thread.getName().contains("CarThread")){
+                CarThread carThread = (CarThread)thread;
+                carThread.interrupt();
+            }
+        }
+    }
+
+    @FXML
+    private void fastClick(){
+        if(booster.getCode() != 6) {
+            booster = Booster.getBooster(booster.getCode() + 1);
+            System.out.println(clock.getText() + " Ускорение в " + booster.getBoost() + " раз");
+            if(booster != null) {
+                boostThreads(booster.getBoost());
+            }
+        }
+    }
+
+    @FXML
+    private void slowClick(){
+        if(booster.getCode() != -6) {
+            booster = Booster.getBooster(booster.getCode() - 1);
+            System.out.println(clock.getText() + " Ускорение в " + booster.getBoost() + " раз");
+            if(booster != null) {
+                boostThreads(booster.getBoost());
+            }
+        }
+    }
+
+    private void boostThreads(double booster){
+        timeThread.pauseThread();
+        flowThread.pauseThread();
+        timeThread.setBooster(booster);
+        flowThread.setBooster(booster);
+        Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
+        for (Thread thread : threads.keySet()) {
+            if(thread.getName().contains("CarThread")){
+                CarThread carThread = (CarThread)thread;
+                carThread.setBooster(booster);
+                carThread.interrupt();
+                carThread.resumeThread();
+            }
+        }
+        timeThread.resumeThread();
+        flowThread.resumeThread();
+    }
+
+    private ColorInput getWhiteColorEffect(double height, double width){
+        ColorInput colorInput = new ColorInput();
+        colorInput.setHeight(height);
+        colorInput.setWidth(width);
+        colorInput.setPaint(Color.WHITE);
+        return colorInput;
+    }
+
+    private ColorAdjust getGrayColorEffect(){
+        ColorAdjust colorAdjust = new ColorAdjust();
+        colorAdjust.setBrightness(0.6);
+        colorAdjust.setContrast(0.09);
+        colorAdjust.setHue(-0.53);
+        colorAdjust.setSaturation(-0.98);
+        return colorAdjust;
+    }
+
+    private int getCountPlaces(){
+        int counter = 0;
+        for(int i = 0; i < parking.getHorizontalSize(); i++){
+            for(int j = 0; j < parking.getVerticalSize(); j++){
+                if(parking.getParkingCells()[i][j].getPattern().getPatternType() == PatternType.CAR || parking.getParkingCells()[i][j].getPattern().getPatternType() == PatternType.TRUCK_HEAD){
+                    counter++;
+                }
+            }
+        }
+        return counter;
+    }
+
+    @FXML
+    private void infoSystem() throws URISyntaxException, IOException {
+        URI uri = new URI("http://localhost:63342/Parking_App/ParkingApp/sample/web/infoSystem.html?_ijt=9b9p3l11qvg3qmuumq818hopi8");
+        java.awt.Desktop.getDesktop().browse(uri);
+    }
+
+    @FXML
+    private void infoCreators() throws IOException{
+        Parent helpWindow = FXMLLoader.load(getClass().getResource("../fxmls/infocreators.fxml"));
+        Stage helpStage = new Stage();
+        helpStage.setResizable(false);
+        helpStage.setTitle("О разработчиках");
+        helpStage.setScene(new Scene(helpWindow, 600, 345));
+        helpStage.showAndWait();
     }
 
     private void drawParkingInit(){
@@ -176,7 +405,7 @@ public class ModellingController {
                 imageView.setFitWidth(width/(max + 2));
                 imageView.setFitHeight(height/(max + 2));
                 imageView.setPreserveRatio(true);
-               // imageView.setEffect(getWhiteColorEffect(height/(max + 2), width/(max + 2)));
+                // imageView.setEffect(getWhiteColorEffect(height/(max + 2), width/(max + 2)));
                 GridPane.setHalignment(imageView, HPos.CENTER);
                 GridPane.setValignment(imageView, VPos.CENTER);
                 GridPane.setMargin(imageView, new Insets(10));
@@ -365,167 +594,6 @@ public class ModellingController {
                 gridPane.add(imageView, j, i);
             }
         }
-    }
-
-    @FXML
-    private void playClick(){
-        if(isPaused){
-            isPaused = false;
-            timeThread.resumeThread();
-            flowThread.resumeThread();
-            Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
-            for (Thread thread : threads.keySet()) {
-                if(thread.getName().contains("CarThread")){
-                    CarThread carThread = (CarThread)thread;
-                    carThread.resumeThread();
-                }
-            }
-        }
-        else {
-            /*if(isStopped){
-                isStopped = false;
-                isLoaded = true;
-                timeThread.setCanWork(true);
-                flowThread.setCanWork(true);
-                Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
-                for (Thread thread : threads.keySet()) {
-                    if(thread.getName().contains("CarThread")){
-                        CarThread carThread = (CarThread)thread;
-                        carThread.setCanWork(true);
-                    }
-                }
-            }*/
-            if(isLoaded) {
-                play.setDisable(true);
-                pause.setDisable(false);
-                stop.setDisable(false);
-                slow.setDisable(false);
-                fast.setDisable(false);
-                flowThread = new FlowThread(anchorPaneFlow, gridPane, countNoFreePlaces, parking, booster.getBoost(), calendar, clock, flowLawDistribution, stayLawDistribution, probabilityCar, probabilityIn);
-                flowThread.setName("TransportFlowThread");
-                flowThread.setDaemon(true);
-                calendar.set(Calendar.HOUR_OF_DAY, 12);
-                calendar.set(Calendar.MINUTE, 0);
-                calendar.set(Calendar.SECOND, 0);
-                timeThread = new TimeThread(calendar, clock, booster.getBoost());
-                timeThread.setName("TimeThread");
-                timeThread.setDaemon(true);
-                flowThread.start();
-                timeThread.start();
-            }
-        }
-    }
-
-    @FXML
-    private void stopClick(){
-        isStopped = true;
-        isLoaded = true;
-        fast.setDisable(true);
-        slow.setDisable(true);
-        pause.setDisable(true);
-        play.setDisable(false);
-        countNoFreePlaces.setText("0");
-        Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
-        for (Thread thread : threads.keySet()) {
-            if(thread.getName().equals("TimeThread") || thread.getName().equals("TransportFlowThread")) {
-                thread.interrupt();
-            }
-            else if(thread.getName().contains("CarThread")){
-                CarThread carThread = (CarThread)thread;
-                carThread.finish();
-                updateParking();
-            }
-        }
-    }
-
-    @FXML
-    private void pauseClick(){
-        isPaused = true;
-        play.setDisable(false);
-        Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
-        for (Thread thread : threads.keySet()) {
-            if(thread.getName().equals("TimeThread")){
-                TimeThread timeThread = (TimeThread)thread;
-                timeThread.pauseThread();
-            }
-            else if(thread.getName().equals("TransportFlowThread")){
-                FlowThread flowThread = (FlowThread)thread;
-                flowThread.pauseThread();
-            }
-            else if(thread.getName().contains("CarThread")){
-                CarThread carThread = (CarThread)thread;
-                carThread.interrupt();
-            }
-        }
-    }
-
-    @FXML
-    private void fastClick(){
-        if(booster.getCode() != 6) {
-            booster = Booster.getBooster(booster.getCode() + 1);
-            System.out.println(clock.getText() + " Ускорение в " + booster.getBoost() + " раз");
-            if(booster != null) {
-                boostThreads(booster.getBoost());
-            }
-        }
-    }
-
-    @FXML
-    private void slowClick(){
-        if(booster.getCode() != -6) {
-            booster = Booster.getBooster(booster.getCode() - 1);
-            System.out.println(clock.getText() + " Ускорение в " + booster.getBoost() + " раз");
-            if(booster != null) {
-                boostThreads(booster.getBoost());
-            }
-        }
-    }
-
-    private void boostThreads(double booster){
-        timeThread.pauseThread();
-        flowThread.pauseThread();
-        timeThread.setBooster(booster);
-        flowThread.setBooster(booster);
-        Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
-        for (Thread thread : threads.keySet()) {
-            if(thread.getName().contains("CarThread")){
-                CarThread carThread = (CarThread)thread;
-                carThread.setBooster(booster);
-                carThread.interrupt();
-                carThread.resumeThread();
-            }
-        }
-        timeThread.resumeThread();
-        flowThread.resumeThread();
-    }
-
-    private ColorInput getWhiteColorEffect(double height, double width){
-        ColorInput colorInput = new ColorInput();
-        colorInput.setHeight(height);
-        colorInput.setWidth(width);
-        colorInput.setPaint(Color.WHITE);
-        return colorInput;
-    }
-
-    private ColorAdjust getGrayColorEffect(){
-        ColorAdjust colorAdjust = new ColorAdjust();
-        colorAdjust.setBrightness(0.6);
-        colorAdjust.setContrast(0.09);
-        colorAdjust.setHue(-0.53);
-        colorAdjust.setSaturation(-0.98);
-        return colorAdjust;
-    }
-
-    private int getCountPlaces(){
-        int counter = 0;
-        for(int i = 0; i < parking.getHorizontalSize(); i++){
-            for(int j = 0; j < parking.getVerticalSize(); j++){
-                if(parking.getParkingCells()[i][j].getPattern().getPatternType() == PatternType.CAR || parking.getParkingCells()[i][j].getPattern().getPatternType() == PatternType.TRUCK_HEAD){
-                    counter++;
-                }
-            }
-        }
-        return counter;
     }
 }
     /*

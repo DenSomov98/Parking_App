@@ -949,11 +949,14 @@ public class ConstructionController {
         int columnIn = 0;
         int rowOut = 0;
         int columnOut = 0;
+        int rowCash = 0;
+        int columnCash = 0;
         for(int i = 0; i < parking.getHorizontalSize(); i++) {
             for (int j = 0; j < parking.getVerticalSize(); j++) {
                 ParkingCell parkingCell = parking.getParkingCells()[i][j];
                 if ((parkingCell.getPattern().getPatternType() == PatternType.IN || parkingCell.getPattern().getPatternType() == PatternType.OUT || parkingCell.getPattern().getPatternType() == PatternType.CASH)) {
                     if (i != 0 && j != 0 && i != parking.getHorizontalSize() - 1 && j != parking.getVerticalSize() - 1) {
+                        gridPane.getChildren().get(coordinatesToIndex(i, j)).setEffect(getShadowEffect(Color.RED));
                         return false;
                     }
                     if (parkingCell.getPattern().getPatternType() == PatternType.IN) {
@@ -964,33 +967,42 @@ public class ConstructionController {
                         rowOut = parkingCell.getCoordinateHorizontal();
                         columnOut = parkingCell.getCoordinateVertical();
                     }
+                    else if(parkingCell.getPattern().getPatternType() == PatternType.CASH){
+                        rowCash = parkingCell.getCoordinateHorizontal();
+                        columnCash = parkingCell.getCoordinateVertical();
+                    }
                 }
             }
         }
         if(rowIn != rowOut && columnIn != columnOut){
+            gridPane.getChildren().get(coordinatesToIndex(rowOut, columnOut)).setEffect(getShadowEffect(Color.RED));
             return false;
         }
         switch (parking.getParkingCells()[rowIn][columnIn].getPattern().getRotation()){
             case SOUTH:{
                 if(parking.getParkingCells()[rowOut][columnOut].getPattern().getRotation() != Rotation.NORTH){
+                    gridPane.getChildren().get(coordinatesToIndex(rowOut, columnOut)).setEffect(getShadowEffect(Color.RED));
                     return false;
                 }
                 break;
             }
             case NORTH:{
                 if(parking.getParkingCells()[rowOut][columnOut].getPattern().getRotation() != Rotation.SOUTH){
+                    gridPane.getChildren().get(coordinatesToIndex(rowOut, columnOut)).setEffect(getShadowEffect(Color.RED));
                     return false;
                 }
                 break;
             }
             case WEST:{
                 if(parking.getParkingCells()[rowOut][columnOut].getPattern().getRotation() != Rotation.EAST){
+                    gridPane.getChildren().get(coordinatesToIndex(rowOut, columnOut)).setEffect(getShadowEffect(Color.RED));
                     return false;
                 }
                 break;
             }
             case EAST:{
                 if(parking.getParkingCells()[rowOut][columnOut].getPattern().getRotation() != Rotation.WEST){
+                    gridPane.getChildren().get(coordinatesToIndex(rowOut, columnOut)).setEffect(getShadowEffect(Color.RED));
                     return false;
                 }
                 break;
@@ -1008,6 +1020,7 @@ public class ConstructionController {
                 return true;
             }
         }
+        gridPane.getChildren().get(coordinatesToIndex(rowCash, columnCash)).setEffect(getShadowEffect(Color.RED));
         return false;
     }
 
@@ -1038,11 +1051,13 @@ public class ConstructionController {
                     WaveAlg path1 = new WaveAlg(getMatrixParking(new PairIJ(rowIn, columnIn), new PairIJ(i, j)));
                     path1.findPath(columnIn + 1, rowIn + 1,j+1, i+1);
                     if(path1.getWave().size() == 1){
+                        gridPane.getChildren().get(coordinatesToIndex(i, j)).setEffect(getShadowEffect(Color.RED));
                         return false;
                     }
                     WaveAlg path2 = new WaveAlg(getMatrixParking(new PairIJ(rowOut, columnOut), new PairIJ(i, j)));
                     path2.findPath(j + 1, i + 1,columnOut+1, rowOut+1);
                     if(path2.getWave().size() == 1){
+                        gridPane.getChildren().get(coordinatesToIndex(i, j)).setEffect(getShadowEffect(Color.RED));
                         return false;
                     }
                 }
@@ -1110,6 +1125,7 @@ public class ConstructionController {
     private void infoCreators() throws IOException{
         Parent helpWindow = FXMLLoader.load(getClass().getResource("../fxmls/infocreators.fxml"));
         Stage helpStage = new Stage();
+        helpStage.setTitle("О разработчиках");
         helpStage.setTitle("О разработчиках");
         helpStage.setScene(new Scene(helpWindow, 600, 345));
         helpStage.showAndWait();

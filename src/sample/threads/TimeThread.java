@@ -3,6 +3,8 @@ package sample.threads;
 import javafx.application.Platform;
 import javafx.scene.control.Label;
 import java.util.Calendar;
+
+import sample.controllers.ModellingController;
 import sample.updaters.*;
 
 public class TimeThread extends Thread{
@@ -12,10 +14,10 @@ public class TimeThread extends Thread{
     private volatile boolean isSuspended;
     private volatile double booster;
 
-    public TimeThread(Calendar calendar, Label clock, double booster){
-        this.calendar = calendar;
+    public TimeThread(Label clock){
+        this.calendar = ModellingController.getCalendar();
         this.clock = clock;
-        this.booster = booster;
+        this.booster = ModellingController.getBooster().getBoost();
         isSuspended = false;
         canWork = true;
     }

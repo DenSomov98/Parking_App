@@ -6,6 +6,7 @@ import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
+import sample.controllers.ModellingController;
 import sample.utils.LawDistribution;
 import sample.models.Parking;
 import sample.updaters.*;
@@ -27,30 +28,40 @@ public class FlowThread extends Thread {
     private volatile boolean canWork;
     private volatile boolean isSuspended;
     private volatile Calendar calendar;
+    private int[] tariffs;
+    private volatile int cashBox;
 
-
-    public FlowThread(AnchorPane anchorPane, GridPane gridPane, Label countNoFreePlaces, Parking parking, double booster, Calendar calendar, Label clock, LawDistribution flowLawDistribution, LawDistribution stayLawDistribution, double probabilityCar, double probabilityIn){
+    public FlowThread(AnchorPane anchorPane, GridPane gridPane, Label countNoFreePlaces, Label clock){
         this.anchorPane = anchorPane;
         this.gridPane = gridPane;
         this.countNoFreePlaces = countNoFreePlaces;
-        this.parking = parking;
-        this.flowLawDistribution = flowLawDistribution;
-        this.stayLawDistribution = stayLawDistribution;
-        this.probabilityCar = probabilityCar;
-        this.probabilityIn = probabilityIn;
-        this.booster = booster;
+        this.parking = ModellingController.getParking();
+        this.flowLawDistribution = ModellingController.getFlowLawDistribution();
+        this.stayLawDistribution = ModellingController.getStayLawDistribution();
+        this.probabilityCar = ModellingController.getProbabilityCar();
+        this.probabilityIn = ModellingController.getProbabilityIn();
+        this.booster = ModellingController.getBooster().getBoost();
         isSuspended = false;
         canWork = true;
-        this.calendar = calendar;
+        this.calendar = ModellingController.getCalendar();
         this.clock = clock;
+        this.cashBox = ModellingController.getCashBox();
+        this.tariffs = ModellingController.getTariffs();
     }
 
     @Override
     public void run() {
         int number = 1;
         while (canWork){
-            Platform.runLater(new UpdaterFlow(number, anchorPane, probabilityCar));
-            CarThread carThread = new CarThread(anchorPane, number, gridPane, countNoFreePlaces, parking, booster, calendar, clock, stayLawDistribution, probabilityIn);
+            boolean isNormalCar;
+            if(new Random().nextDouble() <= probabilityCar) {
+                isNormalCar = true;
+            }
+            else{
+                isNormalCar = false;
+            }
+            Platform.runLater(new UpdaterFlow(number, anchorPane,  isNormalCar));
+            CarThread carThread = new CarThread(anchorPane, number, gridPane, countNoFreePlaces, clock,  isNormalCar);
             carThread.setName("CarThread" + number);
             carThread.start();
             try {

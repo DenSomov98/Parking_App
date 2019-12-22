@@ -18,7 +18,7 @@ public class UpdaterCarInParkingAdd implements Runnable {
 
     @Override
     public void run() {
-        gridPane.add(node, pairIJ.getI()-1, pairIJ.getJ()-1);
+        gridPane.add(node, pairIJ.getI() - 1, pairIJ.getJ() - 1);
     }
 
 }

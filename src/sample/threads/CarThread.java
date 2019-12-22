@@ -4,10 +4,12 @@ import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.effect.InnerShadow;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
+import sample.controllers.ModellingController;
 import sample.utils.LawDistribution;
 import sample.utils.PairIJ;
 import sample.utils.WaveAlg;
@@ -16,6 +18,7 @@ import sample.models.Parking;
 import sample.models.ParkingCell;
 import sample.updaters.*;
 
+import javax.jws.WebParam;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -34,25 +37,30 @@ public class CarThread extends Thread{
     private volatile double booster;
     private volatile boolean isSuspended;
     private volatile ArrayList<PairIJ> listCar;
-    private volatile boolean isFinishedStaying;
+    private volatile ArrayList<PairIJ> listTruck;
     private volatile Calendar calendar;
     private volatile ImageView imageView;
+    private int[] tariffs;
+    private boolean isNormalCar;
 
-    public CarThread(AnchorPane anchorPane, int number, GridPane gridPane, Label countNoFreePlaces, Parking parking, double booster, Calendar calendar, Label clock, LawDistribution stayLawDistribution, double probabilityIn){
+    public CarThread(AnchorPane anchorPane, int number, GridPane gridPane, Label countNoFreePlaces, Label clock, boolean isNormalCar){
         this.anchorPane = anchorPane;
         this.number = number;
         this.gridPane = gridPane;
         this.countNoFreePlaces = countNoFreePlaces;
-        this.parking = parking;
-        this.stayLawDistribution = stayLawDistribution;
-        this.probabilityIn = probabilityIn;
-        this.booster = booster;
+        this.parking = ModellingController.getParking();
+        this.stayLawDistribution = ModellingController.getStayLawDistribution();
+        this.probabilityIn = ModellingController.getProbabilityIn();
+        this.booster = ModellingController.getBooster().getBoost();
         listCar = getListCar();
+        listTruck = getListTruck();
         canWork = true;
         isSuspended = false;
-        this.calendar = calendar;
+        this.calendar = ModellingController.getCalendar();
         this.clock = clock;
         this.imageView = new ImageView();
+        this.tariffs = ModellingController.getTariffs();
+        this.isNormalCar = isNormalCar;
     }
     @Override
     public void run() {
@@ -61,8 +69,15 @@ public class CarThread extends Thread{
         PairIJ indexOut = getIndexOut();
         int coordinateXIn = getCoordinateXOfIn();
         if(new Random().nextDouble() <= probabilityIn){
-            if(listCar.size() != 0){
-                isComeIn = true;
+            if(isNormalCar) {
+                if (listCar.size() != 0) {
+                    isComeIn = true;
+                }
+            }
+            else {
+                if(listTruck.size() != 0){
+                    isComeIn = true;
+                }
             }
         }
         for (int i = 0; i < anchorPane.getWidth() + 50; i += 10) {
@@ -87,44 +102,89 @@ public class CarThread extends Thread{
                                 }
                             }
                         }
-                    } catch (InterruptedException ignored) {
-
-                    }
+                    } catch (InterruptedException ignored) { }
                 }
             }
         }
         if(isComeIn) { // подъезд к парковочному месту
             Random random = new Random();
-            int index = random.nextInt(listCar.size());
-            PairIJ pairChosen = listCar.get(index);
+            int index = 0;
+            PairIJ pairChosen = null;
+            if(isNormalCar) {
+                index = random.nextInt(listCar.size());
+                pairChosen = listCar.get(index);
+            }
+            else {
+                index = random.nextInt(listTruck.size());
+                pairChosen = listTruck.get(index);
+            }
             System.out.println(clock.getText() +" Автомобиль " + number + " заехал на парковку и выбрал место " +  pairChosen.getI() + " " + pairChosen.getJ());
             parking.getParkingCells()[pairChosen.getI()][pairChosen.getJ()].setOccupied(true);
+
             int[][] matrixParking = getMatrixParking(indexIn,pairChosen);
             WaveAlg path = new WaveAlg(matrixParking);
             path.findPath(indexIn.getJ() + 1, indexIn.getI() + 1,pairChosen.getJ()+1, pairChosen.getI()+1);
-            imageView = (ImageView)anchorPane.getChildren().get(number);
+            ImageView imageView2 = null;
+            if(isNormalCar) {
+                imageView = (ImageView) anchorPane.getChildren().get(number);
+            }
+            else {
+                imageView  = new ImageView(new Image(getClass().getResourceAsStream("../images/truckHeadModelling.JPG")));
+                imageView.setFitHeight(40);
+                imageView.setFitWidth(20);
+                imageView2 = new ImageView(new Image(getClass().getResourceAsStream("../images/truckTailModelling.JPG")));
+                imageView2.setFitHeight(40);
+                imageView2.setFitWidth(30);
+            }
             Platform.runLater(new UpdateAnchorPane(number, anchorPane)); // вывод машины из транспортного потока
             for(int i = 0; i < path.getWave().size(); i++) { // заезд машины на парковку
                 if (canWork) {
                     synchronized (parking.getParkingCells()[path.getWave().get(i).getI() - 1][path.getWave().get(i).getJ() - 1]) {
-                        Platform.runLater(new UpdaterCarInParkingAdd(imageView, gridPane, path.getWave().get(i)));
-                        try {
-                            sleep((long) (500 / booster));
-                            if (isSuspended) {
-                                synchronized (this) {
-                                    while (isSuspended) {
-                                        wait();
+                        if(isNormalCar) {
+                            Platform.runLater(new UpdaterCarInParkingAdd(imageView, gridPane, path.getWave().get(i)));
+                            try {
+                                sleep((long) (500 / booster));
+                                if (isSuspended) {
+                                    synchronized (this) {
+                                        while (isSuspended) {
+                                            wait();
+                                        }
                                     }
                                 }
-                            }
-                        } catch (InterruptedException ignored) {
+                            } catch (InterruptedException ignored) {
 
+                            }
+                            if (i != path.getWave().size() - 1) {
+                                Platform.runLater(new UpdaterCarParkingRemove(gridPane, imageView));
+                            }
                         }
-                        if (i != path.getWave().size() - 1) {
-                            Platform.runLater(new UpdaterCarParkingRemove(gridPane, imageView));
+                        else {
+                            if(i != path.getWave().size() - 1) {
+                                Platform.runLater(new UpdaterCarInParkingAdd(imageView2, gridPane, path.getWave().get(i)));
+                                Platform.runLater(new UpdaterCarInParkingAdd(imageView, gridPane, path.getWave().get(i + 1)));
+                            }
+                            try {
+                                sleep((long) (500 / booster));
+                                if (isSuspended) {
+                                    synchronized (this) {
+                                        while (isSuspended) {
+                                            wait();
+                                        }
+                                    }
+                                }
+                            } catch (InterruptedException ignored) {
+
+                            }
+                            if (i != path.getWave().size() - 2 && i != path.getWave().size() - 1) {
+                                Platform.runLater(new UpdaterCarParkingRemove(gridPane, imageView));
+                                Platform.runLater(new UpdaterCarParkingRemove(gridPane, imageView2));
+                            }
                         }
                     }
                 }
+            }
+            if(!isNormalCar){
+                setOccupy(pairChosen, true);
             }
             Platform.runLater(() -> countNoFreePlaces.setText(String.valueOf(Integer.parseInt(countNoFreePlaces.getText())+1)));
             int timeMin = 0; // расчет времени стоянки
@@ -150,37 +210,87 @@ public class CarThread extends Thread{
             long millisBefore = calendar.getTimeInMillis();
             Calendar newCalendar = (GregorianCalendar)calendar.clone();
             newCalendar.add(Calendar.MINUTE, timeMin);
-            long millisAfter = newCalendar.getTimeInMillis() - 1000;
+            long millisAfter = newCalendar.getTimeInMillis();
 
             sleepCar(millisBefore, millisAfter);
+
             System.out.println(clock.getText() + " Автомобиль " + number + " проспал " + timeMin + " минут и направляется к выезду");
             matrixParking = getMatrixParking(pairChosen, getIndexOut());
             path = new WaveAlg(matrixParking);
             path.findPath(pairChosen.getJ() +1, pairChosen.getI() +1, indexOut.getJ() +1, indexOut.getI()+1);
             parking.getParkingCells()[pairChosen.getI()][pairChosen.getJ()].setOccupied(false);
+            if(!isNormalCar){
+                setOccupy(pairChosen, false);
+            }
             Platform.runLater(() -> countNoFreePlaces.setText(String.valueOf(Integer.parseInt(countNoFreePlaces.getText())-1)));
             for(int i = 0; i < path.getWave().size(); i++){ // отъезд машины из парковочного места
                 if(canWork) {
                     synchronized (parking.getParkingCells()[path.getWave().get(i).getI() - 1][path.getWave().get(i).getJ() - 1]) {
-                        if (i != 0) {
-                            Platform.runLater(new UpdaterCarInParkingAdd(imageView, gridPane, path.getWave().get(i)));
-                            //parking.getParkingCells()[path.getWave().get(i).getI() - 1][path.getWave().get(i).getJ() - 1].setOccupied(true);
-                        }
-                        try {
-                            sleep((long) (500 / booster));
-                            if (isSuspended) {
-                                synchronized (this) {
-                                    while (isSuspended) {
-                                        wait();
+                        if(isNormalCar) {
+                            if (i != 0) {
+                                Platform.runLater(new UpdaterCarInParkingAdd(imageView, gridPane, path.getWave().get(i)));
+                            }
+                            try {
+                                sleep((long) (500 / booster));
+                                if (isSuspended) {
+                                    synchronized (this) {
+                                        while (isSuspended) {
+                                            wait();
+                                        }
                                     }
                                 }
+                            } catch (InterruptedException ex) {
+                                ex.printStackTrace();
                             }
-                        } catch (InterruptedException ex) {
-                            ex.printStackTrace();
+                            Platform.runLater(new UpdaterCarParkingRemove(gridPane, imageView));
                         }
-                        Platform.runLater(new UpdaterCarParkingRemove(gridPane, imageView));
-                        //parking.getParkingCells()[path.getWave().get(i).getI() - 1][path.getWave().get(i).getJ() - 1].setOccupied(false);
+                        else {
+                            if(i == 0){
+                                Platform.runLater(new UpdaterCarParkingRemove(gridPane, imageView));
+                                Platform.runLater(new UpdaterCarParkingRemove(gridPane, imageView2));
+                            }
+                            if(i != path.getWave().size() - 1) {
+                                Platform.runLater(new UpdaterCarInParkingAdd(imageView2, gridPane, path.getWave().get(i)));
+                                Platform.runLater(new UpdaterCarInParkingAdd(imageView, gridPane, path.getWave().get(i + 1)));
+                            }
+                            try {
+                                sleep((long) (500 / booster));
+                                if (isSuspended) {
+                                    synchronized (this) {
+                                        while (isSuspended) {
+                                            wait();
+                                        }
+                                    }
+                                }
+                            } catch (InterruptedException ex) {
+                                ex.printStackTrace();
+                            }
+                            if(i != path.getWave().size() - 1) {
+                                Platform.runLater(new UpdaterCarParkingRemove(gridPane, imageView2));
+                                Platform.runLater(new UpdaterCarParkingRemove(gridPane, imageView));
+                            }
+                        }
                     }
+                }
+            }
+            int countHours = timeMin / 60;
+            if(countHours == 0) {
+                countHours++;
+            }
+            if(parking.getParkingCells()[pairChosen.getI()][pairChosen.getJ()].getPattern().getPatternType() == PatternType.CAR){
+                if(newCalendar.get(Calendar.HOUR_OF_DAY) > 8 && newCalendar.get(Calendar.HOUR_OF_DAY) < 22){
+                    ModellingController.setCashBox(ModellingController.getCashBox() + countHours * tariffs[0]);
+                }
+                else {
+                    ModellingController.setCashBox(ModellingController.getCashBox() + countHours * tariffs[2]);
+                }
+            }
+            else {
+                if(newCalendar.get(Calendar.HOUR_OF_DAY) > 8 && newCalendar.get(Calendar.HOUR_OF_DAY) < 22){
+                    ModellingController.setCashBox(ModellingController.getCashBox() + countHours * tariffs[1]);
+                }
+                else {
+                    ModellingController.setCashBox(ModellingController.getCashBox() + countHours * tariffs[3]);
                 }
             }
             System.out.println(clock.getText() + " Автомобиль " + number + " покинул парковку");
@@ -208,6 +318,27 @@ public class CarThread extends Thread{
             long currentMillis = calendar.getTimeInMillis();
             if(currentMillis < millisAfter) {
                 sleepCar(currentMillis, millisAfter);
+            }
+        }
+    }
+
+    private void setOccupy(PairIJ pairChosen, boolean flag){
+        switch (parking.getParkingCells()[pairChosen.getI()][pairChosen.getJ()].getPattern().getRotation()){
+            case NORTH:{
+                parking.getParkingCells()[pairChosen.getI()+1][pairChosen.getJ()].setOccupied(flag);
+                break;
+            }
+            case SOUTH:{
+                parking.getParkingCells()[pairChosen.getI()-1][pairChosen.getJ()].setOccupied(flag);
+                break;
+            }
+            case EAST:{
+                parking.getParkingCells()[pairChosen.getI()][pairChosen.getJ()-1].setOccupied(flag);
+                break;
+            }
+            case WEST:{
+                parking.getParkingCells()[pairChosen.getI()][pairChosen.getJ()+1].setOccupied(flag);
+                break;
             }
         }
     }
@@ -253,6 +384,18 @@ public class CarThread extends Thread{
         return listCar;
     }
 
+    private ArrayList<PairIJ> getListTruck(){
+        ArrayList<PairIJ> listTruck = new ArrayList<>();
+        for(int k = 0; k < parking.getHorizontalSize(); k++) {
+            for (int j = 0; j < parking.getVerticalSize(); j++) {
+                if (parking.getParkingCells()[k][j].getPattern().getPatternType() == PatternType.TRUCK_HEAD && !parking.getParkingCells()[k][j].isOccupied()) {
+                    listTruck.add(new PairIJ(k, j));
+                }
+            }
+        }
+        return listTruck;
+    }
+
     private int[][] getMatrixParking(PairIJ pairOne, PairIJ pairTwo){
         int[][] matrix = new int[parking.getHorizontalSize()+2][parking.getVerticalSize() + 2];
         for (int i = 0; i < matrix.length; i++) {
@@ -267,6 +410,9 @@ public class CarThread extends Thread{
             for(int j = 0; j < parking.getVerticalSize(); j++){
                 ParkingCell parkingCell = parking.getParkingCells()[i][j];
                 if(parkingCell.getPattern().getPatternType() == PatternType.ROAD){
+                    matrix[i+1][j+1] = -1;
+                }
+                else if(parkingCell.getPattern().getPatternType() == PatternType.TRUCK_TAIL && !parkingCell.isOccupied()){
                     matrix[i+1][j+1] = -1;
                 }
                 else if(i == pairTwo.getI() && j == pairTwo.getJ()){

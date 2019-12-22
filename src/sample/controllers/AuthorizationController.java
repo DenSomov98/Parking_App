@@ -51,11 +51,12 @@ public class AuthorizationController {
 
     @FXML
     private void clickEntry(){
-        if(comboBox.getSelectionModel().getSelectedItem().toString().equals("Пользователь")){
+        if(comboBox.getSelectionModel().getSelectedItem().equals("Пользователь")){
             try {
                 toModelling();
             }
             catch (IOException ex){
+                ex.printStackTrace();
                 showErrorWindow("Ошибка загрузки. ");
             }
         }

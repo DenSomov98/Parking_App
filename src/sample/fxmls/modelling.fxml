@@ -18,8 +18,8 @@
               <Menu mnemonicParsing="false" text="Ввод и настройка параметров" />
               <Menu mnemonicParsing="false" text="Справка">
                  <items>
-                     <MenuItem mnemonicParsing="false" text="Информация о разработчиках" />
-                     <MenuItem mnemonicParsing="false" text="Информация о системе" />
+                     <MenuItem mnemonicParsing="false" onAction="#infoCreators" text="Информация о разработчиках" />
+                     <MenuItem mnemonicParsing="false" onAction="#infoSystem" text="Информация о системе" />
                  </items>
               </Menu>
           </menus>
@@ -106,7 +106,7 @@
                      </AnchorPane>
                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0" style="-fx-background-color: White;">
                         <children>
-                            <Label layoutX="14.0" layoutY="14.0" text="Доход парковки за день:">
+                            <Label layoutX="14.0" layoutY="14.0" text="Доход парковки:">
                                 <font>
                                     <Font size="14.0" />
                                 </font>
@@ -116,17 +116,17 @@
                                     <Font size="14.0" />
                                 </font>
                             </Label>
-                            <Label layoutX="14.0" layoutY="78.0" text="занятых мест за день:">
+                            <Label layoutX="14.0" layoutY="78.0" text="занятых мест:">
                                 <font>
                                     <Font size="14.0" />
                                 </font>
                             </Label>
-                            <Label fx:id="profitDay" layoutX="186.0" layoutY="14.0" text="-">
+                            <Label fx:id="profit" layoutX="168.0" layoutY="14.0" text="-">
                                 <font>
                                     <Font size="14.0" />
                                 </font>
                             </Label>
-                            <Label fx:id="averagePlacesDay" layoutX="171.0" layoutY="78.0" text="-">
+                            <Label fx:id="averagePlaces" layoutX="171.0" layoutY="78.0" text="-">
                                 <font>
                                     <Font size="14.0" />
                                 </font>
