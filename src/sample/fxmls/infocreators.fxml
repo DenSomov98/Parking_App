@@ -14,7 +14,7 @@
       <Label layoutX="263.0" layoutY="135.0" text="Сомов Денис" />
       <Label layoutX="241.0" layoutY="159.0" text="Бессмертный Андрей" />
       <Label layoutX="247.0" layoutY="183.0" text="Абдуллаев Евгений" />
-      <Label layoutX="212.0" layoutY="257.0" text="Научный руководитель проекта" />
+      <Label layoutX="232.0" layoutY="257.0" text="Руководитель проекта" />
       <Label layoutX="194.0" layoutY="274.0" text="доцент кафедры программных систем" />
       <Label layoutX="219.0" layoutY="297.0" text="Зеленко Лариса Сергеевна" />
       <Label layoutX="240.0" layoutY="221.0" text="Группа 6414-020302D" />

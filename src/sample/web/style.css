@@ -1,0 +1,168 @@
+html, body {
+
+    background-attachment: fixed;
+    height: 100%;
+    max-height: 100%;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    background-color: #ffebcb;
+    color: black;
+}
+
+
+
+.logo {
+	width: 20%;
+}
+
+.logo:hover img {
+	outline: 3px solid #ff5300;
+}
+
+.contact {
+	font-size: 3em;
+	vertical-align:middle;
+	text-align:center;
+}
+
+.td-min {
+	width: 160px;
+}
+
+.td-max {
+	width: 390px;
+}
+
+.menu {
+	width: 19%;
+	vertical-align: top;
+	background-color: #ffe1a5;
+	padding-left: 10px;
+	margin-left: 20px;
+}
+
+.content {
+	margin-left: 20px;
+	padding-left: 20px;
+	width: 80%;
+	background-color: #ffefe2;
+}
+
+.li-menu {
+	margin-bottom: 5px;
+	margin-left: -10px;
+}
+
+footer {
+	margin-top:-20px;
+	padding-left:10px;
+	padding-bottom:15px;
+    position: relative;
+    clear: both;
+    background-color: #ffb8cd;
+}
+
+    .slider {
+		background-color: #ffd5c5;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .slider__wrapper {
+      display: flex;
+      transition: transform 0.6s ease;
+    }
+
+    .slider__item {
+		background-color: #ffd5c5;
+	  font-size: 2em;
+	  font-family: Georgia, 'Times New Roman', Times, serif;
+      flex: 0 0 100%;
+      max-width: 100%;
+	  text-align: center;
+    }
+
+    .slider__control {
+      position: absolute;
+      top: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      color: #fff;
+      text-align: center;
+      opacity: 0.5;
+      height: 50px;
+      transform: translateY(-50%);
+      background: rgba(0, 0, 0, .5);
+    }
+
+    .slider__control:hover,
+    .slider__control:focus {
+      color: #fff;
+      text-decoration: none;
+      outline: 0;
+      opacity: .9;
+    }
+
+    .slider__control_left {
+      left: 0;
+    }
+
+    .slider__control_right {
+      right: 0;
+    }
+
+    .slider__control::before {
+      content: '';
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      background: transparent no-repeat center center;
+      background-size: 100% 100%;
+    }
+
+    .slider__control_left::before {
+      background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23fff' viewBox='0 0 8 8'%3E%3Cpath d='M5.25 0l-4 4 4 4 1.5-1.5-2.5-2.5 2.5-2.5-1.5-1.5z'/%3E%3C/svg%3E");
+    }
+
+    .slider__control_right::before {
+      background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23fff' viewBox='0 0 8 8'%3E%3Cpath d='M2.75 0l-1.5 1.5 2.5 2.5-2.5 2.5 1.5 1.5 4-4-4-4z'/%3E%3C/svg%3E");
+    }
+
+    .slider__item>div {
+      height: 250px;
+	  text-align: center;
+    }
+
+	.fig {
+		vertical-align: top;
+		height: 300px;
+		display: block; /* Блочный элемент (для старых браузеров) */
+		text-align: center; /* Выравнивание по центру */
+		margin-top: 0; /* Отступ сверху */
+		margin-bottom: 5px; /* Отступ снизу */
+	}
+.fig img {
+	padding-top: 1px;
+	height:300px;
+	transform: scale(1.34,1);
+	text-align: center;
+}
+
+div.scrollup {
+  position: fixed; /* фиксированная позиция */
+  color: #fff; /* цвет текста */
+  background-color: #286090; /* цвет заднего фона */
+  right: 20px; /* расстояние от правого края */
+  bottom: 0px; /* расстояние от нижнего края */
+  padding: 4px 10px; /* отступы до содержимого блока */
+  font-size: 20px; /* размер шрифта (иконки) */
+  border-top-left-radius: 4px; /* скругление верхнего левого угла */
+  border-top-right-radius: 4px; /* скругление верхнего правого угла */
+  cursor: pointer; /* форма курсора */
+  display: none; /* не отображать элемент */
+  text-align: center; /*выравнивание содержимого элемента по центру */
+}
+div.scrollup:hover {
+  background-color: #000; /* цвет заднего фона при наведении */
+}

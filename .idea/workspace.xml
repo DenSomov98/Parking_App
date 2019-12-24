@@ -7,22 +7,23 @@
       <change beforePath="$PROJECT_DIR$/out/production/ParkingApp/sample/controllers/ConstructionController.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/ParkingApp/sample/controllers/ConstructionController.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/out/production/ParkingApp/sample/controllers/ModellingController$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/ParkingApp/sample/controllers/ModellingController$1.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/out/production/ParkingApp/sample/controllers/ModellingController.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/ParkingApp/sample/controllers/ModellingController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ParkingApp/sample/controllers/SettingsController.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/ParkingApp/sample/controllers/SettingsController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ParkingApp/sample/fxmls/infocreators.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/ParkingApp/sample/fxmls/infocreators.fxml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/out/production/ParkingApp/sample/fxmls/modelling.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/ParkingApp/sample/fxmls/modelling.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ParkingApp/sample/fxmls/settings.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/ParkingApp/sample/fxmls/settings.fxml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/out/production/ParkingApp/sample/threads/CarThread$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/ParkingApp/sample/threads/CarThread$1.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/out/production/ParkingApp/sample/threads/CarThread.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/ParkingApp/sample/threads/CarThread.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/ParkingApp/sample/threads/FlowThread$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/ParkingApp/sample/threads/FlowThread$1.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/out/production/ParkingApp/sample/threads/FlowThread.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/ParkingApp/sample/threads/FlowThread.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/ParkingApp/sample/threads/TimeThread.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/ParkingApp/sample/threads/TimeThread.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/ParkingApp/sample/updaters/UpdaterFlow.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/ParkingApp/sample/updaters/UpdaterFlow.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/sample/controllers/AuthorizationController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/sample/controllers/AuthorizationController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/sample/controllers/ConstructionController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/sample/controllers/ConstructionController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/sample/controllers/ModellingController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/sample/controllers/ModellingController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/sample/controllers/SettingsController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/sample/controllers/SettingsController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/sample/fxmls/infocreators.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/sample/fxmls/infocreators.fxml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/sample/fxmls/modelling.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/sample/fxmls/modelling.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/sample/fxmls/settings.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/sample/fxmls/settings.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/sample/models/Pattern.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/sample/models/Pattern.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/sample/threads/CarThread.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/sample/threads/CarThread.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/sample/threads/FlowThread.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/sample/threads/FlowThread.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/sample/threads/TimeThread.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/sample/threads/TimeThread.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/sample/updaters/UpdaterCarInParkingAdd.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/sample/updaters/UpdaterCarInParkingAdd.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/sample/updaters/UpdaterFlow.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/sample/updaters/UpdaterFlow.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -109,7 +110,7 @@
     <property name="OverrideImplement.combined" value="false" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="dynamic.classpath" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/src/sample/parkings" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/src/sample/web" />
     <property name="project.structure.last.edited" value="Artifacts" />
     <property name="project.structure.proportion" value="0.0" />
     <property name="project.structure.side.proportion" value="0.0" />
@@ -118,13 +119,14 @@
     <property name="settings.editor.selected.configurable" value="reference.settingsdialog.IDE.editor.colors.Java" />
   </component>
   <component name="RecentsManager">
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="D:\Денис\Documents\GitHub\Parking_App\src\sample\parkings" />
-      <recent name="C:\Users\Денис\IdeaProjects\ParkingApp\src\sample" />
-    </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\Денис\IdeaProjects\ParkingApp\src\sample\fxmls" />
       <recent name="C:\Users\Денис\IdeaProjects\ParkingApp\src\sample\images" />
+    </key>
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\Денис\Documents\GitHub\Parking_App\src\sample\web" />
+      <recent name="D:\Денис\Documents\GitHub\Parking_App\src\sample\parkings" />
+      <recent name="C:\Users\Денис\IdeaProjects\ParkingApp\src\sample" />
     </key>
   </component>
   <component name="RunDashboard">

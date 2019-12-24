@@ -105,6 +105,9 @@ public class CarThread extends Thread{
                     } catch (InterruptedException ignored) { }
                 }
             }
+            else {
+                return;
+            }
         }
         if(isComeIn) { // подъезд к парковочному месту
             Random random = new Random();
@@ -182,11 +185,13 @@ public class CarThread extends Thread{
                         }
                     }
                 }
+                else {
+                    return;
+                }
             }
             if(!isNormalCar){
                 setOccupy(pairChosen, true);
             }
-            Platform.runLater(() -> countNoFreePlaces.setText(String.valueOf(Integer.parseInt(countNoFreePlaces.getText())+1)));
             int timeMin = 0; // расчет времени стоянки
             switch (stayLawDistribution.getLawType()){
                 case UNIFORM:{
@@ -206,7 +211,11 @@ public class CarThread extends Thread{
                     break;
                 }
             }
-            System.out.println(clock.getText() + " Автомобиль " + number + " добрался до места " +  pairChosen.getI() + " " + pairChosen.getJ() + " и будет стоять " + timeMin + " минут");
+            if(canWork) {
+                Platform.runLater(() -> countNoFreePlaces.setText(String.valueOf(Integer.parseInt(countNoFreePlaces.getText()) + 1)));
+                System.out.println(clock.getText() + " Автомобиль " + number + " добрался до места " + pairChosen.getI() + " " + pairChosen.getJ() + " и будет стоять " + timeMin + " минут");
+                ModellingController.setCountCars(ModellingController.getCountCars()+1);
+            }
             long millisBefore = calendar.getTimeInMillis();
             Calendar newCalendar = (GregorianCalendar)calendar.clone();
             newCalendar.add(Calendar.MINUTE, timeMin);
@@ -214,7 +223,6 @@ public class CarThread extends Thread{
 
             sleepCar(millisBefore, millisAfter);
 
-            System.out.println(clock.getText() + " Автомобиль " + number + " проспал " + timeMin + " минут и направляется к выезду");
             matrixParking = getMatrixParking(pairChosen, getIndexOut());
             path = new WaveAlg(matrixParking);
             path.findPath(pairChosen.getJ() +1, pairChosen.getI() +1, indexOut.getJ() +1, indexOut.getI()+1);
@@ -222,7 +230,10 @@ public class CarThread extends Thread{
             if(!isNormalCar){
                 setOccupy(pairChosen, false);
             }
-            Platform.runLater(() -> countNoFreePlaces.setText(String.valueOf(Integer.parseInt(countNoFreePlaces.getText())-1)));
+            if(canWork) {
+                System.out.println(clock.getText() + " Автомобиль " + number + " проспал " + timeMin + " минут и направляется к выезду");
+                Platform.runLater(() -> countNoFreePlaces.setText(String.valueOf(Integer.parseInt(countNoFreePlaces.getText()) - 1)));
+            }
             for(int i = 0; i < path.getWave().size(); i++){ // отъезд машины из парковочного места
                 if(canWork) {
                     synchronized (parking.getParkingCells()[path.getWave().get(i).getI() - 1][path.getWave().get(i).getJ() - 1]) {
@@ -272,6 +283,9 @@ public class CarThread extends Thread{
                         }
                     }
                 }
+                else {
+                    return;
+                }
             }
             int countHours = timeMin / 60;
             if(countHours == 0) {
@@ -293,7 +307,9 @@ public class CarThread extends Thread{
                     ModellingController.setCashBox(ModellingController.getCashBox() + countHours * tariffs[3]);
                 }
             }
-            System.out.println(clock.getText() + " Автомобиль " + number + " покинул парковку");
+            if(canWork) {
+                System.out.println(clock.getText() + " Автомобиль " + number + " покинул парковку");
+            }
         }
     }
 
@@ -349,10 +365,10 @@ public class CarThread extends Thread{
         super.interrupt();
     }
 
-    public void finish() {
+    public void finish() throws Throwable {
         canWork = false;
         isSuspended = true;
-        super.interrupt();
+        finalize();
     }
 
     public void setCanWork(boolean canWork){
@@ -491,7 +507,7 @@ public class CarThread extends Thread{
 
     private int getTimeExponential(int lambda){
         Random random = new Random();
-        return (int)(-1* Math.log(random.nextDouble())/lambda);
+        return (int)(-1* Math.log(random.nextDouble())*lambda);
     }
 
     private int getTimeNormal(int mathExpectation, int variance){

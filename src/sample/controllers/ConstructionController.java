@@ -1117,7 +1117,7 @@ public class ConstructionController {
 
     @FXML
     private void infoSystem() throws URISyntaxException, IOException {
-        URI uri = new URI("http://localhost:63342/Parking_App/ParkingApp/sample/web/infoSystem.html?_ijt=9b9p3l11qvg3qmuumq818hopi8");
+        URI uri = new URI("http://localhost:63342/Parking_App/ParkingApp/sample/web/Site.html");
         java.awt.Desktop.getDesktop().browse(uri);
     }
 
@@ -1125,7 +1125,6 @@ public class ConstructionController {
     private void infoCreators() throws IOException{
         Parent helpWindow = FXMLLoader.load(getClass().getResource("../fxmls/infocreators.fxml"));
         Stage helpStage = new Stage();
-        helpStage.setTitle("О разработчиках");
         helpStage.setTitle("О разработчиках");
         helpStage.setScene(new Scene(helpWindow, 600, 345));
         helpStage.showAndWait();

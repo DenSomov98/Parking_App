@@ -1,5 +1,7 @@
 package sample.controllers;
 
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -10,6 +12,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Menu;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.ColorInput;
 import javafx.scene.image.Image;
@@ -67,6 +70,8 @@ public class ModellingController {
     private GridPane gridPane;
     @FXML
     private AnchorPane anchorPaneFlow;
+    @FXML
+    private Menu menuSettings;
 
     private static volatile Calendar calendar;
     private static volatile Booster booster;
@@ -83,9 +88,11 @@ public class ModellingController {
     private static LawDistribution stayLawDistribution;
     private static int[] tariffs;
     private static int cashBox;
+    private static int countCars;
 
     private static double probabilityCar;
     private static double probabilityIn;
+    private static int hoursStart;
 
     public ModellingController(Parking parking){
         ModellingController.parking = parking;
@@ -129,6 +136,53 @@ public class ModellingController {
         return probabilityIn;
     }
 
+    public static void setStage(Stage stage) {
+        ModellingController.stage = stage;
+    }
+
+    public static void setFlowLawDistribution(LawDistribution flowLawDistribution) {
+        ModellingController.flowLawDistribution = flowLawDistribution;
+    }
+
+    public static void setStayLawDistribution(LawDistribution stayLawDistribution) {
+        ModellingController.stayLawDistribution = stayLawDistribution;
+    }
+
+    public static void setTariffs(int[] tariffs) {
+        ModellingController.tariffs = tariffs;
+    }
+
+    public static void setProbabilityCar(double probabilityCar) {
+        ModellingController.probabilityCar = probabilityCar;
+    }
+
+    public static void setProbabilityIn(double probabilityIn) {
+        ModellingController.probabilityIn = probabilityIn;
+    }
+
+    public static int getHoursStart() {
+        return hoursStart;
+    }
+
+    public static void setHoursStart(int hoursStart) {
+        ModellingController.hoursStart = hoursStart;
+    }
+
+    public static boolean isIsParameterized() {
+        return isParameterized;
+    }
+
+    public static void setIsParameterized(boolean isParameterized) {
+        ModellingController.isParameterized = isParameterized;
+    }
+
+    public static int getCountCars() {
+        return countCars;
+    }
+
+    public static void setCountCars(int countCars) {
+        ModellingController.countCars = countCars;
+    }
 
     public void initialize(){
         play.setDisable(true);
@@ -138,11 +192,6 @@ public class ModellingController {
         fast.setDisable(true);
         calendar = new GregorianCalendar();
         booster = Booster.BOOSTER_DEFAULT;
-        flowLawDistribution = new LawDistribution(LawType.UNIFORM, 2, 6);
-        stayLawDistribution = new LawDistribution(LawType.DETERMINE, 1, LawDistribution.NO_PARAMETER);
-        tariffs = new int[] {30, 40, 40, 50};
-        probabilityCar = 0.5;
-        probabilityIn = 0.5;
         cashBox = 0;
         if(parking == null) {
             parking = new Parking(5, 5);
@@ -214,20 +263,10 @@ public class ModellingController {
             }
         }
         else {
-            /*if(isStopped){
-                isStopped = false;
-                isLoaded = true;
-                timeThread.setCanWork(true);
-                flowThread.setCanWork(true);
-                Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
-                for (Thread thread : threads.keySet()) {
-                    if(thread.getName().contains("CarThread")){
-                        CarThread carThread = (CarThread)thread;
-                        carThread.setCanWork(true);
-                    }
-                }
-            }*/
-            if(isLoaded) {
+            if(isLoaded && isParameterized) {
+                cashBox = 0;
+                averagePlaces.setText("");
+                profit.setText("");
                 play.setDisable(true);
                 pause.setDisable(false);
                 stop.setDisable(false);
@@ -236,7 +275,7 @@ public class ModellingController {
                 flowThread = new FlowThread(anchorPaneFlow, gridPane, countNoFreePlaces, clock);
                 flowThread.setName("TransportFlowThread");
                 flowThread.setDaemon(true);
-                calendar.set(Calendar.HOUR_OF_DAY, 12);
+                calendar.set(Calendar.HOUR_OF_DAY, hoursStart);
                 calendar.set(Calendar.MINUTE, 0);
                 calendar.set(Calendar.SECOND, 0);
                 timeThread = new TimeThread(clock);
@@ -257,7 +296,22 @@ public class ModellingController {
         pause.setDisable(true);
         play.setDisable(false);
         profit.setText(String.valueOf(cashBox));
+
+        Calendar startCalendar = new GregorianCalendar();
+        startCalendar.set(Calendar.HOUR_OF_DAY, hoursStart);
+        startCalendar.set(Calendar.MINUTE, 0);
+        startCalendar.set(Calendar.SECOND, 0);
+        int differenceMin = (int)(calendar.getTimeInMillis() - startCalendar.getTimeInMillis())/60000;
+        if(differenceMin == 0){
+            differenceMin++;
+        }
+        averagePlaces.setText(String.valueOf((int)countCars/differenceMin));
         countNoFreePlaces.setText("0");
+        for(int i = 0; i < parking.getHorizontalSize(); i++){
+            for(int j = 0; j < parking.getVerticalSize(); j++){
+                parking.getParkingCells()[i][j].setOccupied(false);
+            }
+        }
         Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
         for (Thread thread : threads.keySet()) {
             if(thread.getName().equals("TimeThread") || thread.getName().equals("TransportFlowThread")) {
@@ -265,10 +319,15 @@ public class ModellingController {
             }
             else if(thread.getName().contains("CarThread")){
                 CarThread carThread = (CarThread)thread;
-                carThread.finish();
-                updateParking();
+                try {
+                    carThread.finish();
+                }
+                catch (Throwable e){
+                    e.printStackTrace();
+                }
             }
         }
+        updateParking();
     }
 
     @FXML
@@ -315,21 +374,21 @@ public class ModellingController {
     }
 
     private void boostThreads(double booster){
-        timeThread.pauseThread();
-        flowThread.pauseThread();
+        //timeThread.pauseThread();
+        //flowThread.pauseThread();
         timeThread.setBooster(booster);
         flowThread.setBooster(booster);
         Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
         for (Thread thread : threads.keySet()) {
             if(thread.getName().contains("CarThread")){
                 CarThread carThread = (CarThread)thread;
-                carThread.setBooster(booster);
                 carThread.interrupt();
+                carThread.setBooster(booster);
                 carThread.resumeThread();
             }
         }
-        timeThread.resumeThread();
-        flowThread.resumeThread();
+        //timeThread.resumeThread();
+        //flowThread.resumeThread();
     }
 
     private ColorInput getWhiteColorEffect(double height, double width){
@@ -363,7 +422,7 @@ public class ModellingController {
 
     @FXML
     private void infoSystem() throws URISyntaxException, IOException {
-        URI uri = new URI("http://localhost:63342/Parking_App/ParkingApp/sample/web/infoSystem.html?_ijt=9b9p3l11qvg3qmuumq818hopi8");
+        URI uri = new URI("http://localhost:63342/Parking_App/ParkingApp/sample/web/Site.html");
         java.awt.Desktop.getDesktop().browse(uri);
     }
 
@@ -474,13 +533,29 @@ public class ModellingController {
                     parking = readParking;
                     updateParking();
                     isLoaded = true;
-                    play.setDisable(false);
+                    if(isParameterized) {
+                        play.setDisable(false);
+                    }
                     countPlaces.setText(String.valueOf(getCountPlaces()));
                 }
                 catch (IOException ex) {
                     ex.printStackTrace();
                 }
             }
+        }
+    }
+
+    @FXML
+    private void toSettings() throws IOException{
+        Parent settingsWindow = FXMLLoader.load(getClass().getResource("../fxmls/settings.fxml"));
+        Stage settingsStage = new Stage();
+        SettingsController.setStage(settingsStage);
+        settingsStage.setResizable(false);
+        settingsStage.setTitle("Ввод и настройка параметров");
+        settingsStage.setScene(new Scene(settingsWindow, 470, 500));
+        settingsStage.show();
+        if(isParameterized&&isLoaded){
+            play.setDisable(false);
         }
     }
 

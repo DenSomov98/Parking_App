@@ -40,8 +40,8 @@ public class AuthorizationController {
 
     @FXML
     private void initialize(){
-        textBoxLogin.setText("admin");
-        textBoxPassword.setText("park1ng");
+        /*textBoxLogin.setText("admin");
+        textBoxPassword.setText("park1ng");*/
         comboBox.getItems().add("Администратор");
         comboBox.getItems().add("Пользователь");
         comboBox.getSelectionModel().select("Пользователь");
@@ -51,6 +51,8 @@ public class AuthorizationController {
 
     @FXML
     private void clickEntry(){
+        String admLogin = "admin";
+        String admPassword = "park1ng";
         if(comboBox.getSelectionModel().getSelectedItem().equals("Пользователь")){
             try {
                 toModelling();
@@ -63,7 +65,15 @@ public class AuthorizationController {
         else {
             String login = textBoxLogin.getText();
             String password = textBoxPassword.getText();
-            try (FileInputStream fileInputStream = new FileInputStream("entryData.bin")) {
+            try {
+                if (login.equals(admLogin) && password.equals(admPassword)) {
+                    toConstruction();
+                    ConstructionController.setStage(stage);
+                } else {
+                    showErrorWindow("Неверно введен логин и/или пароль. Повторите ввод заново. ");
+                }
+            }
+            /*try (FileInputStream fileInputStream = new FileInputStream("entryData.bin")) {
                 ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
                 String[] entryData = ((String) objectInputStream.readObject()).split("_");
                 if (entryData[0].equals(login) && entryData[1].equals(password)) {
@@ -73,7 +83,7 @@ public class AuthorizationController {
                 else {
                     showErrorWindow("Неверно введен логин и/или пароль. Повторите ввод заново. ");
                 }
-            }
+            }*/
             catch (Exception ex) {
                 ex.printStackTrace();
                 //showErrorWindow(ex.getMessage());

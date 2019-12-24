@@ -7,195 +7,55 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-
-<AnchorPane prefHeight="952.0" prefWidth="473.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.controllers.SettingsController">
-   <children>
-      <Label layoutX="29.0" layoutY="28.0" text="Тип транспортного потока:">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-      <ComboBox layoutX="221.0" layoutY="23.0" prefWidth="150.0" promptText="Случайный" />
-      <Label layoutX="29.0" layoutY="79.0" text="Вероятность заезда а/м на парковку[0;1] :">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-      <TextField layoutX="309.0" layoutY="74.0" prefHeight="31.0" prefWidth="150.0">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </TextField>
-      <Label layoutX="28.0" layoutY="129.0" text="Вероятность появления автомобиля [0;1] :">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-      <Label layoutX="102.0" layoutY="169.0" text="Легковой: ">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-      <Label layoutX="103.0" layoutY="204.0" text="Грузовой: ">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-      <TextField layoutX="197.0" layoutY="163.0" />
-      <TextField layoutX="197.0" layoutY="198.0" />
-      <Label layoutX="29.0" layoutY="255.0" text="Время между появлениями а/м :">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-      <Label layoutX="413.0" layoutY="257.0" text="с">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-      <!--<TextField layoutX="255.0" layoutY="251.0" prefHeight="31.0" prefWidth="150.0" /> -->
-       <Spinner initialValue="1" layoutX="255.0" layoutY="251.0" max="20" min="1" prefHeight="31.0" prefWidth="150.0">
-           <editable>true</editable>
-       </Spinner>
-      <Label layoutX="90.0" layoutY="301.0" text="Закон распределения: ">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-      <ComboBox layoutX="255.0" layoutY="295.0" prefWidth="150.0" promptText="Нормальный" />
-      <Label layoutX="132.0" layoutY="341.0" text="Мат. ожидание: ">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-     <!-- <TextField layoutX="256.0" layoutY="335.0" prefHeight="31.0" prefWidth="148.0" /> -->
-       <Spinner initialValue="1" layoutX="256.0" layoutY="335.0" max="20" min="1" prefHeight="31.0" prefWidth="148.0">
-           <editable>true</editable>
-       </Spinner>
-      <Label layoutX="413.0" layoutY="341.0" text="с">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-      <Label layoutX="159.0" layoutY="380.0" text="Дисперсия: ">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-     <!-- <TextField layoutX="256.0" layoutY="374.0" prefHeight="31.0" prefWidth="150.0" /> -->
-       <Spinner initialValue="0" layoutX="256.0" layoutY="374.0" max="5" min="0" prefHeight="31.0" prefWidth="150.0">
-           <editable>true</editable>
-       </Spinner>
-      <Label layoutX="417.0" layoutY="380.0" text="с">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-      <Label layoutX="28.0" layoutY="421.0" text="Тип времени стоянки: ">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-      <ComboBox layoutX="197.0" layoutY="416.0" prefWidth="150.0" promptText="Случайный" />
-      <Label layoutX="73.0" layoutY="468.0" text="Время стоянки: ">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-       <Spinner initialValue="60" layoutX="197.0" layoutY="462.0" max="180" min="15" >
-           <editable>true</editable>
-       </Spinner>
-      <Label layoutX="384.0" layoutY="477.0" text="мин">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-      <Label layoutX="27.0" layoutY="511.0" text="Закон распределения: ">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-      <ComboBox layoutX="198.0" layoutY="505.0" prefWidth="150.0" promptText="Нормальный" />
-      <Label layoutX="358.0" layoutY="595.0" text="мин">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-      <!--<TextField layoutX="197.0" layoutY="590.0" prefHeight="31.0" prefWidth="150.0" /> -->
-       <Spinner initialValue="0" layoutX="197.0" layoutY="590.0" max="10" min="0" prefHeight="31.0" prefWidth="150.0">
-           <editable>true</editable>
-       </Spinner>
-      <Label layoutX="98.0" layoutY="596.0" text="Дисперсия: ">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-      <Label layoutX="358.0" layoutY="556.0" text="мин">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-      <!--<TextField layoutX="199.0" layoutY="551.0" prefHeight="31.0" prefWidth="148.0" /> -->
-       <Spinner initialValue="60" layoutX="199.0" layoutY="551.0" max="180" min="15" prefHeight="31.0" prefWidth="148.0">
-           <editable>true</editable>
-       </Spinner>
-      <Label layoutX="72.0" layoutY="557.0" text="Мат. ожидание: ">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-      <Label layoutX="29.0" layoutY="646.0" text="Тарифы оплаты парковки">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-      <Label layoutX="139.0" layoutY="685.0" text="Легковой">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-      <Label layoutX="264.0" layoutY="685.0" text="Грузовой">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-      <Label layoutX="47.0" layoutY="720.0" text="Дневной">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-      <TextField layoutX="124.0" layoutY="715.0" prefHeight="31.0" prefWidth="89.0" />
-      <TextField layoutX="253.0" layoutY="715.0" prefHeight="31.0" prefWidth="89.0" />
-      <Label layoutX="47.0" layoutY="764.0" text="Ночной">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-      <TextField layoutX="254.0" layoutY="759.0" prefHeight="31.0" prefWidth="89.0" />
-      <TextField layoutX="124.0" layoutY="759.0" prefHeight="31.0" prefWidth="89.0" />
-      <Label layoutX="27.0" layoutY="830.0" text="Время начала моделирования: ">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-      <!-- <TextField layoutX="249.0" layoutY="825.0" prefHeight="31.0" prefWidth="156.0" /> -->
-       <Spinner initialValue="12" layoutX="249.0" layoutY="825.0" max="24" min="0" prefHeight="31.0" prefWidth="156.0">
-           <editable>true</editable>
-       </Spinner>
-      <Label layoutX="407.0" layoutY="830.0" text="ч">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Label>
-      <Button layoutX="100.0" layoutY="891.0" mnemonicParsing="false" prefHeight="31.0" prefWidth="83.0" text="Задать">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Button>
-      <Button layoutX="291.0" layoutY="891.0" mnemonicParsing="false" prefHeight="31.0" prefWidth="77.0" text="Отмена">
-         <font>
-            <Font size="14.0" />
-         </font>
-      </Button>
-   </children>
-</AnchorPane>
+<ScrollPane hbarPolicy="NEVER" prefHeight="500.0" prefWidth="470.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.controllers.SettingsController">
+   <content>
+      <AnchorPane fx:id="anchorPane" prefHeight="682.0" prefWidth="473.0">
+         <children>
+            <Label layoutX="102.0" layoutY="16.0" text="Тип транспортного потока:" />
+            <ComboBox fx:id="comboBoxFlowType" layoutX="267.0" layoutY="12.0" onAction="#changeFlowType" prefHeight="25.0" prefWidth="150.0" promptText="Случайный" />
+            <Label layoutX="31.0" layoutY="245.0" text="Вероятность заезда а/м на парковку[0;1] :" />
+            <TextField fx:id="probabilityIn" layoutX="268.0" layoutY="241.0" prefHeight="20.0" prefWidth="150.0" />
+            <Label layoutX="11.0" layoutY="208.0" prefHeight="17.0" prefWidth="246.0" text="Вероятность появления легкового а/м [0;1] :" />
+            <TextField fx:id="probabilityCar" layoutX="269.0" layoutY="204.0" />
+            <Label layoutX="79.0" layoutY="52.0" text="Время между появлениями а/м :" />
+            <Label layoutX="420.0" layoutY="52.0" text="с" />
+            <Label layoutX="132.0" layoutY="94.0" text="Закон распределения: " />
+            <ComboBox fx:id="comboBoxLawTypeInterval" layoutX="268.0" layoutY="90.0" onAction="#changeFlowLawType" prefWidth="150.0" promptText="Равномерный" />
+            <Label fx:id="labelParam1Interval" layoutX="181.0" layoutY="132.0" text="Ниж.граница:" />
+            <Label layoutX="420.0" layoutY="132.0" text="с" />
+            <Label fx:id="labelParam2Interval" layoutX="181.0" layoutY="169.0" text="Верх.граница:" />
+            <Label layoutX="420.0" layoutY="169.0" text="с" />
+            <Label layoutX="133.0" layoutY="286.0" text="Тип времени стоянки: " />
+            <ComboBox fx:id="comboBoxParkingType" layoutX="269.0" layoutY="282.0" onAction="#changeParkingType" prefWidth="150.0" promptText="Случайный" />
+            <Label layoutX="169.0" layoutY="321.0" text="Время стоянки: " />
+            <Label layoutX="419.0" layoutY="321.0" text="мин" />
+            <Label layoutX="132.0" layoutY="353.0" text="Закон распределения: " />
+            <ComboBox fx:id="comboBoxLawTypePark" layoutX="269.0" layoutY="349.0" onAction="#changeParkLawType" prefWidth="150.0" promptText="Нормальный" />
+            <Label layoutX="419.0" layoutY="427.0" text="мин" />
+            <Label fx:id="labelParam2Park" layoutX="195.0" layoutY="427.0" text="Дисперсия: " />
+            <Label layoutX="419.0" layoutY="388.0" text="мин" />
+            <Label fx:id="labelParam1Park" layoutX="168.0" layoutY="388.0" text="Мат. ожидание: " />
+            <Label layoutX="14.0" layoutY="462.0" text="Тарифы оплаты парковки" />
+            <Label layoutX="157.0" layoutY="487.0" text="Легковой" />
+            <Label layoutX="282.0" layoutY="487.0" text="Грузовой" />
+            <Label layoutX="76.0" layoutY="521.0" text="Дневной" />
+            <TextField fx:id="costCarDay" layoutX="142.0" layoutY="517.0" prefHeight="17.0" prefWidth="89.0" />
+            <TextField fx:id="costTruckDay" layoutX="271.0" layoutY="517.0" prefHeight="20.0" prefWidth="89.0" />
+            <Label layoutX="78.0" layoutY="558.0" text="Ночной" />
+            <TextField fx:id="costTruckNight" layoutX="271.0" layoutY="554.0" prefHeight="20.0" prefWidth="89.0" />
+            <TextField fx:id="costCarNight" layoutX="142.0" layoutY="554.0" prefHeight="17.0" prefWidth="89.0" />
+            <Label layoutX="88.0" layoutY="603.0" text="Время начала моделирования: " />
+            <Label layoutX="423.0" layoutY="603.0" text="ч" />
+            <Button fx:id="buttonConfirm" layoutX="134.0" layoutY="639.0" mnemonicParsing="false" onAction="#confirm" prefHeight="17.0" prefWidth="83.0" text="Задать" />
+            <Button fx:id="buttonCancel" layoutX="270.0" layoutY="639.0" mnemonicParsing="false" onAction="#cancel" prefHeight="10.0" prefWidth="77.0" text="Отмена" />
+            <Spinner fx:id="timeDetermine" layoutX="268.0" layoutY="48.0" max="20" min="1" prefHeight="25.0" prefWidth="150.0" />
+            <Spinner fx:id="param1Interval" layoutX="269.0" layoutY="128.0" max="20" min="1" prefHeight="25.0" prefWidth="146.0" />
+            <Spinner fx:id="param2Interval" layoutX="269.0" layoutY="165.0" max="5" min="0" />
+            <Spinner fx:id="timeParkDetermine" layoutX="268.0" layoutY="317.0" max="180" min="1" />
+            <Spinner fx:id="param1Park" layoutX="269.0" layoutY="384.0" max="180" min="1" />
+            <Spinner fx:id="param2Park" layoutX="270.0" layoutY="423.0" max="10" min="0" />
+            <Spinner fx:id="timeStartModelling" layoutX="270.0" layoutY="599.0" max="24" min="0" />
+         </children>
+      </AnchorPane>
+   </content>
+</ScrollPane>

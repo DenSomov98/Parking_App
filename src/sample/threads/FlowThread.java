@@ -139,7 +139,7 @@ public class FlowThread extends Thread {
 
     private int getTimeExponential(int lambda){
         Random random = new Random();
-        return (int)(-1* Math.log(random.nextDouble())/lambda);
+        return (int)(-1* Math.log(random.nextDouble())*lambda);
     }
 
     private int getTimeNormal(int mathExpectation, int variance){
