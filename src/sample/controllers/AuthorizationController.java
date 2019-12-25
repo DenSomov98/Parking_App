@@ -58,7 +58,7 @@ public class AuthorizationController {
                 toModelling();
             }
             catch (IOException ex){
-                ex.printStackTrace();
+                //ex.printStackTrace();
                 showErrorWindow("Ошибка загрузки. ");
             }
         }
@@ -85,8 +85,8 @@ public class AuthorizationController {
                 }
             }*/
             catch (Exception ex) {
-                ex.printStackTrace();
-                //showErrorWindow(ex.getMessage());
+                //ex.printStackTrace();
+                showErrorWindow("Ошибка загрузки. ");
             }
         }
     }

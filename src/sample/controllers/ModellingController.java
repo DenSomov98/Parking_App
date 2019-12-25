@@ -225,6 +225,7 @@ public class ModellingController {
             isLoaded = true;
             play.setDisable(false);
             updateParking();
+            countPlaces.setText(String.valueOf(getCountPlaces()));
         }
     }
 
@@ -272,6 +273,8 @@ public class ModellingController {
                 stop.setDisable(false);
                 slow.setDisable(false);
                 fast.setDisable(false);
+                profit.setText("-");
+                averagePlaces.setText("-");
                 flowThread = new FlowThread(anchorPaneFlow, gridPane, countNoFreePlaces, clock);
                 flowThread.setName("TransportFlowThread");
                 flowThread.setDaemon(true);
@@ -296,7 +299,7 @@ public class ModellingController {
         pause.setDisable(true);
         play.setDisable(false);
         profit.setText(String.valueOf(cashBox));
-
+        menuSettings.setDisable(true);
         Calendar startCalendar = new GregorianCalendar();
         startCalendar.set(Calendar.HOUR_OF_DAY, hoursStart);
         startCalendar.set(Calendar.MINUTE, 0);
@@ -553,7 +556,7 @@ public class ModellingController {
         settingsStage.setResizable(false);
         settingsStage.setTitle("Ввод и настройка параметров");
         settingsStage.setScene(new Scene(settingsWindow, 470, 500));
-        settingsStage.show();
+        settingsStage.showAndWait();
         if(isParameterized&&isLoaded){
             play.setDisable(false);
         }

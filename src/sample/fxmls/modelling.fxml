@@ -15,7 +15,7 @@
                      <MenuItem mnemonicParsing="false" onAction="#loadFile" text="Загрузить парковку из файла" />
                  </items>
               </Menu>
-              <Menu mnemonicParsing="false" text="Параметры">
+              <Menu fx:id="menuSettings" mnemonicParsing="false" text="Параметры">
                <items>
                   <MenuItem mnemonicParsing="false" onAction="#toSettings" text="Ввод и настройка" />
                </items></Menu>
